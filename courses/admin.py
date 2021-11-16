@@ -105,3 +105,6 @@ class QuizConfig(NestedModelAdmin):
     inlines = [QuestionInline]
 
 admin.site.register(Quiz, QuizConfig)
+
+
+# models order

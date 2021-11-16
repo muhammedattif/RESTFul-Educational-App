@@ -4,5 +4,5 @@ app_name = 'courses'
 
 urlpatterns = [
     # Account APIs
-    path('api', include('courses.api.urls', 'courses_api')),
+    path('api/', include('courses.api.urls', 'courses_api')),
   ]

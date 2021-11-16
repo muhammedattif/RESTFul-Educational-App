@@ -32,7 +32,9 @@ SECRET_KEY = 'django-insecure-pzxjj03z6a7+2xf-186h!7xy-mcq)hz3in-xz-06#a!1b)1^83
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
+INTERNAL_IPS = [
+    '127.0.0.1',
+]
 
 # Application definition
 
@@ -44,6 +46,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'nested_inline',
+    'admin_reorder',
+    'rest_framework',
+    'debug_toolbar',
 
     # APPS
     'users',
@@ -58,6 +63,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'admin_reorder.middleware.ModelAdminReorder',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'alteby.urls'
@@ -134,3 +141,17 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+ADMIN_REORDER = (
+    # Keep original label and models
+    'auth',
+    'users',
+    'rest_framework',
+
+    # Reorder Courses models
+    {'app': 'courses', 'models': ('courses.Course', 'courses.Content', 'courses.CourseProgress', 'courses.Quiz', 'courses.Category')},
+
+    {'app': 'courses', 'label': 'Reports and Feedbacks' ,'models': ('courses.Report', 'courses.Feedback', 'courses.CorrectInfo', 'courses.Comment')},
+
+    {'app': 'courses', 'label': 'Playlists' ,'models': ('courses.Playlist', 'courses.Favorite',)},
+)

@@ -15,7 +15,7 @@ class Quiz(models.Model):
         verbose_name_plural = 'quizzes'
 
     def __str__(self):
-          return self.description
+          return self.quiz_name
 
 class Question(models.Model):
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
@@ -86,6 +86,9 @@ class Content(models.Model):
     order = models.IntegerField()
     quiz = models.OneToOneField(Quiz, on_delete=models.CASCADE, blank=True, null=True)
 
+    class Meta:
+        ordering = ('order', )
+
     def __str__(self):
           return self.title
 
@@ -108,6 +111,9 @@ class CourseProgress(models.Model):
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     content = models.ForeignKey(Content, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name_plural = 'course progress'
 
     def __str__(self):
           return f'{self.user.email}-{self.course.title}-{self.content.title}'
