@@ -49,7 +49,7 @@ class PlaylistDetail(APIView, PageNumberPagination):
 
     def get(self, request, playlist_id, format=None):
         try:
-            content = Playlist.objects.get(id=playlist_id).content.all()
+            content = Playlist.objects.get(id=playlist_id, owner=request.user).content.all()
             content = self.paginate_queryset(content, request, view=self)
             serializer = ContentSerializer(content, many=True)
             return Response(serializer.data)

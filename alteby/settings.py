@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'nested_inline',
     'admin_reorder',
     'rest_framework',
+    'rest_framework.authtoken',
     'debug_toolbar',
 
     # APPS
@@ -152,6 +153,7 @@ ADMIN_REORDER = (
     # Keep original label and models
     'auth',
     'rest_framework',
+    'authtoken',
     'users',
     'playlists',
 
