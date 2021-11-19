@@ -20,11 +20,14 @@ class Favorite(models.Model):
 # Playlist Model
 class Playlist(models.Model):
     owner = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name="Playlists")
-    playlist_name = models.CharField(max_length=20)
+    name = models.CharField(max_length=20, unique=True)
     content = models.ManyToManyField(Content, blank=True)
 
+    class Meta:
+        unique_together = (("owner", "name"),)
+
     def __str__(self):
-          return f'{self.owner.email}-{self.playlist_name}'
+          return f'{self.owner.email}-{self.name}'
 
     def add(self, content):
         self.content.add(content)

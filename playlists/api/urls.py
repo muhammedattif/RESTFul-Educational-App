@@ -1,16 +1,17 @@
 from django.urls import path, include
-from .views import get_all_playlists, get_playlist, playlist_contents, get_all_favorites, favorites_contents
+from .views import FavoriteList, FavoriteContent, PlaylistList, PlaylistDetail, PlaylistContent
 
 app_name = 'playlists'
 
 urlpatterns = [
   # Playlists APIs routes
-  path('', get_all_playlists, name='playlists'),
-  path('<int:playlist_id>', get_playlist, name='playlist'),
-  path('<int:playlist_id>/contents/<int:content_id>/', playlist_contents, name='playlist_contents'),
+  # path('', get_all_playlists, name='playlists'),
+  path('', PlaylistList.as_view()),
+  path('<int:playlist_id>', PlaylistDetail.as_view(), name='playlist'),
+  path('<int:playlist_id>/content/<int:content_id>/', PlaylistContent.as_view(), name='playlist_content'),
 
   # Favorites APIs routes
-  path('favorites/', get_all_favorites, name='favorites'),
-  path('favorites/<int:content_id>/', favorites_contents, name='favorites_contents'),
+  path('favorites/', FavoriteList.as_view(), name='favorites'),
+  path('favorites/<int:content_id>/', FavoriteContent.as_view(), name='favorites_contents'),
 
 ]
