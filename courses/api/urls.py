@@ -5,6 +5,6 @@ app_name = 'courses'
 
 urlpatterns = [
   # courses APIs routes
-  path('courses/', get_courses, name='courses'),
+  path('', get_courses, name='courses'),
   path('<int:course_id>/', get_course, name='course'),
 ]

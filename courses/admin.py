@@ -7,8 +7,6 @@ Content, ContentPrivacy,
 CourseProgress,
 Comment,
 Feedback,
-Favorite,
-Playlist,
 CorrectInfo,
 Report,
 Quiz,
@@ -76,8 +74,6 @@ admin.site.register(CourseProgress)
 admin.site.register(Comment)
 admin.site.register(Feedback)
 
-admin.site.register(Favorite)
-admin.site.register(Playlist)
 
 admin.site.register(CorrectInfo)
 admin.site.register(Report)

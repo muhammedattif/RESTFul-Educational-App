@@ -23,7 +23,16 @@ urlpatterns = [
 
     # Users
     path('users', include('users.urls', 'users')),
+    # Users APIs
+    path('api/users/', include('users.api.urls', 'users_api')),
 
     # Courses
     path('courses/', include('courses.urls', 'courses')),
+    # Courses APIs
+    path('api/courses/', include('courses.api.urls', 'courses_api')),
+
+    # Playlists
+    path('playlists/', include('playlists.urls', 'playlists')),
+    # Playlists APIs
+    path('api/playlists/', include('playlists.api.urls', 'playlists_api')),
 ]

@@ -52,7 +52,8 @@ INSTALLED_APPS = [
 
     # APPS
     'users',
-    'courses'
+    'courses',
+    'playlists'
 ]
 
 MIDDLEWARE = [
@@ -145,13 +146,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 ADMIN_REORDER = (
     # Keep original label and models
     'auth',
-    'users',
     'rest_framework',
+    'users',
+    'playlists',
 
     # Reorder Courses models
     {'app': 'courses', 'models': ('courses.Course', 'courses.Content', 'courses.CourseProgress', 'courses.Quiz', 'courses.Category')},
 
-    {'app': 'courses', 'label': 'Reports and Feedbacks' ,'models': ('courses.Report', 'courses.Feedback', 'courses.CorrectInfo', 'courses.Comment')},
-
-    {'app': 'courses', 'label': 'Playlists' ,'models': ('courses.Playlist', 'courses.Favorite',)},
+    {'app': 'courses', 'label': 'Reports and Feedbacks' ,'models': ('courses.Report', 'courses.Feedback', 'courses.CorrectInfo', 'courses.Comment')}
 )

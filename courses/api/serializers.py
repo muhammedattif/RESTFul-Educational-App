@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from courses.models import Course, Content, CoursePrivacy, Category, Quiz, Question, Choice
+from courses.models import Course, Content, CoursePrivacy, ContentPrivacy, Category, Quiz, Question, Choice
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
@@ -24,9 +24,14 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = '__all__'
 
-class PrivacySerializer(serializers.ModelSerializer):
+class CoursePrivacySerializer(serializers.ModelSerializer):
     class Meta:
         model = CoursePrivacy
+        fields = '__all__'
+
+class ContentPrivacySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContentPrivacy
         fields = '__all__'
 
 class ContentSerializer(serializers.ModelSerializer):
@@ -38,11 +43,10 @@ class ContentSerializer(serializers.ModelSerializer):
 
 class CourseSerializer(serializers.ModelSerializer):
     content = ContentSerializer(many=True, read_only=True)
-    privacy = PrivacySerializer(many=False, read_only=True)
+    privacy = CoursePrivacySerializer(many=False, read_only=True)
     category = CategorySerializer(many=True, read_only=True)
     quiz = QuizSerializer(many=False, read_only=True)
 
     class Meta:
         model = Course
         fields = '__all__'
-

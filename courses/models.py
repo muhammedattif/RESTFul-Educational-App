@@ -1,7 +1,7 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.conf import settings
-
+from model_utils import Choices
 UserModel = settings.AUTH_USER_MODEL
 
 
@@ -54,19 +54,36 @@ class Course(models.Model):
     def __str__(self):
           return self.title
 
+    def can_access(self, user):
+        if self.privacy.is_public():
+            return True
+        elif self.privacy.is_private():
+            return False
+        else:
+            return user in self.privacy.shared_with.all()
+
+
 class CoursePrivacy(models.Model):
-    PRIVACY_CHOICES = (
+    PRIVACY_CHOICES = Choices(
         ('public', 'Public'),
         ('private', 'Private'),
         ('custom', 'Custom'),
-
     )
     course = models.OneToOneField(Course, on_delete=models.CASCADE, blank=True, related_name="privacy")
-    option = models.CharField(max_length=10, choices=PRIVACY_CHOICES, default="private")
+    option = models.CharField(max_length=10, choices=PRIVACY_CHOICES, default=PRIVACY_CHOICES.private)
     shared_with = models.ManyToManyField(UserModel, blank=True)
 
     def __str__(self):
           return self.course.title
+
+    def is_public(self):
+        return self.option == self.PRIVACY_CHOICES.public
+
+    def is_private(self):
+        return self.option == self.PRIVACY_CHOICES.private
+
+    def is_custom(self):
+        return self.option == self.PRIVACY_CHOICES.custom
 
 class Attachement(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="attachements")
@@ -92,19 +109,38 @@ class Content(models.Model):
     def __str__(self):
           return self.title
 
+    def can_access(self, user):
+        if self.privacy.is_public():
+            return True
+        elif self.privacy.is_private():
+            return False
+        else:
+            return user in self.privacy.shared_with.all()
+
+
+
 class ContentPrivacy(models.Model):
-    PRIVACY_CHOICES = (
+    PRIVACY_CHOICES = Choices(
         ('public', 'Public'),
         ('private', 'Private'),
         ('custom', 'Custom'),
     )
 
     content = models.OneToOneField(Content, on_delete=models.CASCADE, blank=True, related_name="privacy")
-    option = models.CharField(max_length=10, choices=PRIVACY_CHOICES, default="private")
+    option = models.CharField(max_length=10, choices=PRIVACY_CHOICES, default=PRIVACY_CHOICES.private)
     shared_with = models.ManyToManyField(UserModel, blank=True)
 
     def __str__(self):
           return self.content.title
+
+    def is_public(self):
+        return self.option == self.PRIVACY_CHOICES.public
+
+    def is_private(self):
+        return self.option == self.PRIVACY_CHOICES.private
+
+    def is_custom(self):
+        return self.option == self.PRIVACY_CHOICES.custom
 
 ###### Course progress
 class CourseProgress(models.Model):
@@ -155,24 +191,6 @@ class Feedback(models.Model):
 
     def __str__(self):
           return f'{self.user.email}-{self.course.title}'
-
-
-# Favorite and Playlists
-
-class Favorite(models.Model):
-    user = models.OneToOneField(UserModel, on_delete=models.CASCADE, related_name="favorites")
-    content = models.ManyToManyField(Content, blank=True)
-
-    def __str__(self):
-          return self.user.email
-
-class Playlist(models.Model):
-    user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name="Playlists")
-    playlist_name = models.CharField(max_length=20)
-    content = models.ManyToManyField(Content, blank=True)
-
-    def __str__(self):
-          return f'{self.user.email}-{self.playlist_name}'
 
 
 ### requests
