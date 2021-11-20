@@ -54,7 +54,8 @@ INSTALLED_APPS = [
     # APPS
     'users',
     'courses',
-    'playlists'
+    'playlists',
+    'categories'
 ]
 
 MIDDLEWARE = [
@@ -155,10 +156,11 @@ ADMIN_REORDER = (
     'rest_framework',
     'authtoken',
     'users',
-    'playlists',
+    'playlists',    
+    'categories',
 
     # Reorder Courses models
-    {'app': 'courses', 'models': ('courses.Course', 'courses.Content', 'courses.CourseProgress', 'courses.Quiz', 'courses.Category')},
+    {'app': 'courses', 'models': ('courses.Course', 'courses.Content', 'courses.CourseProgress', 'courses.Quiz')},
 
     {'app': 'courses', 'label': 'Reports and Feedbacks' ,'models': ('courses.Report', 'courses.Feedback', 'courses.CorrectInfo', 'courses.Comment')}
 )

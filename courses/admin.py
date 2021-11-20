@@ -1,8 +1,9 @@
 from django.contrib import admin
+from django.db import transaction
 from nested_inline.admin import NestedStackedInline, NestedModelAdmin
 from courses.models import (
 Course, CoursePrivacy,
-Category, Attachement,
+Attachement,
 Content, ContentPrivacy,
 CourseProgress,
 Comment,
@@ -19,6 +20,7 @@ class CoursePrivacyInline(NestedStackedInline):
     can_delete = False
     verbose_name_plural = 'Privacy'
     fk_name = 'course'
+
 
 class AttachementsInline(NestedStackedInline):
     model = Attachement
@@ -37,21 +39,28 @@ class CourseConfig(NestedModelAdmin):
         ("Course Information", {'fields': ('title', 'description', 'categories', 'quiz')}),
     )
 
+    @transaction.atomic
+    def save_formset(self, request, form, formset, change):
+        try:
+            super().save_formset(request, form, formset, change)
+        except Exception as e:
+            print(e)
+            pass
+
     inlines = [CoursePrivacyInline, AttachementsInline]
 
 
 admin.site.register(Course, CourseConfig)
-admin.site.register(Category)
 
 ###### Course Content
 
-class ContentPrivacyInline(admin.StackedInline):
+class ContentPrivacyInline(NestedStackedInline):
     model = ContentPrivacy
     can_delete = False
     verbose_name_plural = 'Privacy'
     fk_name = 'content'
 
-class ContentConfig(admin.ModelAdmin):
+class ContentConfig(NestedModelAdmin):
     model = Content
 
     list_filter = ('course', )
@@ -61,12 +70,7 @@ class ContentConfig(admin.ModelAdmin):
         ("Content Information", {'fields': ('title', 'course', 'video_content', 'audio_content', 'text_content', 'order', 'quiz')}),
     )
 
-    inlines = (ContentPrivacyInline, )
-
-    def get_inline_instances(self, request, obj=None):
-        if not obj:
-            return list()
-        return super(ContentConfig, self).get_inline_instances(request, obj)
+    inlines = [ContentPrivacyInline]
 
 admin.site.register(Content, ContentConfig)
 admin.site.register(CourseProgress)

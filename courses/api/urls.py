@@ -1,10 +1,11 @@
 from django.urls import path, include
-from .views import get_courses, get_course
+from .views import CourseList, CourseDetail
 
 app_name = 'courses'
 
 urlpatterns = [
   # courses APIs routes
-  path('', get_courses, name='courses'),
-  path('<int:course_id>/', get_course, name='course'),
+  path('', CourseList.as_view(), name='courses'),
+  path('<int:course_id>/', CourseDetail.as_view(), name='course'),
+
 ]

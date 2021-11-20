@@ -1,7 +1,8 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from model_utils import Choices
+from categories.models import Category
 UserModel = settings.AUTH_USER_MODEL
 
 
@@ -34,15 +35,6 @@ class Choice(models.Model):
 
 
 
-class Category(models.Model):
-    category_name = models.CharField(max_length=40)
-
-    class Meta:
-        verbose_name_plural = 'categories'
-
-    def __str__(self):
-        return self.category_name
-
 class Course(models.Model):
 
     title = models.CharField(max_length=100)
@@ -54,6 +46,10 @@ class Course(models.Model):
     def __str__(self):
           return self.title
 
+    def atomic_post_save(self, sender, created, **kwargs):
+        CoursePrivacy.objects.get_or_create(course=self)
+
+
     def can_access(self, user):
         if self.privacy.is_public():
             return True
@@ -62,31 +58,8 @@ class Course(models.Model):
         else:
             return user in self.privacy.shared_with.all()
 
-
-class CoursePrivacy(models.Model):
-    PRIVACY_CHOICES = Choices(
-        ('public', 'Public'),
-        ('private', 'Private'),
-        ('custom', 'Custom'),
-    )
-    course = models.OneToOneField(Course, on_delete=models.CASCADE, blank=True, related_name="privacy")
-    option = models.CharField(max_length=10, choices=PRIVACY_CHOICES, default=PRIVACY_CHOICES.private)
-    shared_with = models.ManyToManyField(UserModel, blank=True)
-
-    def __str__(self):
-          return self.course.title
-
-    def is_public(self):
-        return self.option == self.PRIVACY_CHOICES.public
-
-    def is_private(self):
-        return self.option == self.PRIVACY_CHOICES.private
-
-    def is_custom(self):
-        return self.option == self.PRIVACY_CHOICES.custom
-
 class Attachement(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="attachements")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="attachments")
     file = models.FileField(upload_to='file')
 
     def __str__(self):
@@ -109,6 +82,9 @@ class Content(models.Model):
     def __str__(self):
           return self.title
 
+    def atomic_post_save(self, sender, created, **kwargs):
+        ContentPrivacy.objects.get_or_create(content=self)
+
     def can_access(self, user):
         if self.privacy.is_public():
             return True
@@ -118,29 +94,6 @@ class Content(models.Model):
             return user in self.privacy.shared_with.all()
 
 
-
-class ContentPrivacy(models.Model):
-    PRIVACY_CHOICES = Choices(
-        ('public', 'Public'),
-        ('private', 'Private'),
-        ('custom', 'Custom'),
-    )
-
-    content = models.OneToOneField(Content, on_delete=models.CASCADE, blank=True, related_name="privacy")
-    option = models.CharField(max_length=10, choices=PRIVACY_CHOICES, default=PRIVACY_CHOICES.private)
-    shared_with = models.ManyToManyField(UserModel, blank=True)
-
-    def __str__(self):
-          return self.content.title
-
-    def is_public(self):
-        return self.option == self.PRIVACY_CHOICES.public
-
-    def is_private(self):
-        return self.option == self.PRIVACY_CHOICES.private
-
-    def is_custom(self):
-        return self.option == self.PRIVACY_CHOICES.custom
 
 ###### Course progress
 class CourseProgress(models.Model):
@@ -215,3 +168,42 @@ class Report(models.Model):
 
     def __str__(self):
           return f'{self.user.email}-{self.course.title}-{self.content.title}'
+
+
+## Privacy
+class Privacy(models.Model):
+
+    PRIVACY_CHOICES = Choices(
+        ('public', 'Public'),
+        ('private', 'Private'),
+        ('custom', 'Custom'),
+    )
+
+    option = models.CharField(max_length=10, choices=PRIVACY_CHOICES, default=PRIVACY_CHOICES.private)
+    shared_with = models.ManyToManyField(UserModel, blank=True)
+
+    def is_public(self):
+        return self.option == self.PRIVACY_CHOICES.public
+
+    def is_private(self):
+        return self.option == self.PRIVACY_CHOICES.private
+
+    def is_custom(self):
+        return self.option == self.PRIVACY_CHOICES.custom
+
+
+
+class CoursePrivacy(Privacy):
+
+    course = models.OneToOneField(Course, on_delete=models.CASCADE, blank=True, related_name="privacy")
+
+    def __str__(self):
+          return self.course.title
+
+
+class ContentPrivacy(Privacy):
+
+    content = models.OneToOneField(Content, on_delete=models.CASCADE, blank=True, related_name="privacy")
+
+    def __str__(self):
+          return self.content.title

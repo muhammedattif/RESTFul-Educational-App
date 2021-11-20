@@ -35,4 +35,9 @@ urlpatterns = [
     path('playlists/', include('playlists.urls', 'playlists')),
     # Playlists APIs
     path('api/playlists/', include('playlists.api.urls', 'playlists_api')),
+
+    # Playlists
+    path('categories/', include('categories.urls', 'categories')),
+    # Playlists APIs
+    path('api/categories/', include('categories.api.urls', 'categories_api')),
 ]
