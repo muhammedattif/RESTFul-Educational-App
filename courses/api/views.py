@@ -3,8 +3,8 @@ from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import status
-from .serializers import CourseSerializer
-from courses.models import Course
+from .serializers import CourseSerializer, QuizSerializer
+from courses.models import Course, Content, Quiz
 from django.db.models import Q
 from functools import reduce
 import operator
@@ -38,6 +38,53 @@ class CourseDetail(APIView, PageNumberPagination):
         response = {
             'status': 'error',
             'message': 'Access denied!',
-            'error_description': 'You don\'t have access to this resourse!, enroll this course to see its content.'
+            'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
         }
         return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+class QuizDetail(APIView, PageNumberPagination):
+
+    def get(self, request, course_id=None, content_id=None, format=None):
+        if content_id:
+            content = Content.objects.get(id=content_id, course__id=course_id)
+            if content.can_access(request.user):
+                if content.quiz:
+                    quiz_id = content.quiz.id
+                    quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
+                    serializer = QuizSerializer(quiz, many=False)
+                    return Response(serializer.data)
+                else:
+                    response = {
+                        'status': 'error',
+                        'message': 'Not Found!',
+                        'error_description': 'This content does not has any quizzes.'
+                    }
+            else:
+                response = {
+                    'status': 'error',
+                    'message': 'Access denied!',
+                    'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
+                }
+            return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+        else:
+            course = Course.objects.get(id=course_id)
+            if course.can_access(request.user):
+                if course.quiz:
+                    quiz_id = course.quiz.id
+                    quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
+                    serializer = QuizSerializer(quiz, many=False)
+                    return Response(serializer.data)
+                else:
+                    response = {
+                        'status': 'error',
+                        'message': 'Not Found!',
+                        'error_description': 'This course does not has any quizzes.'
+                    }
+            else:
+                response = {
+                    'status': 'error',
+                    'message': 'Access denied!',
+                    'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
+                }
+            return Response(response, status=status.HTTP_403_FORBIDDEN)

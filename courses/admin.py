@@ -3,7 +3,8 @@ from django.db import transaction
 from nested_inline.admin import NestedStackedInline, NestedModelAdmin
 from courses.models import (
 Course, CoursePrivacy,
-Attachement,
+CourseAttachement,
+ContentAttachement,
 Content, ContentPrivacy,
 CourseProgress,
 Comment,
@@ -22,8 +23,8 @@ class CoursePrivacyInline(NestedStackedInline):
     fk_name = 'course'
 
 
-class AttachementsInline(NestedStackedInline):
-    model = Attachement
+class CourseAttachementsInline(NestedStackedInline):
+    model = CourseAttachement
     can_delete = True
     verbose_name_plural = 'Attachements'
     fk_name = 'course'
@@ -47,12 +48,17 @@ class CourseConfig(NestedModelAdmin):
             print(e)
             pass
 
-    inlines = [CoursePrivacyInline, AttachementsInline]
+    inlines = [CoursePrivacyInline, CourseAttachementsInline]
 
 
 admin.site.register(Course, CourseConfig)
 
 ###### Course Content
+class ContentAttachementsInline(NestedStackedInline):
+    model = ContentAttachement
+    can_delete = True
+    verbose_name_plural = 'Attachements'
+    fk_name = 'content'
 
 class ContentPrivacyInline(NestedStackedInline):
     model = ContentPrivacy
@@ -70,7 +76,7 @@ class ContentConfig(NestedModelAdmin):
         ("Content Information", {'fields': ('title', 'course', 'video_content', 'audio_content', 'text_content', 'order', 'quiz')}),
     )
 
-    inlines = [ContentPrivacyInline]
+    inlines = [ContentPrivacyInline, ContentAttachementsInline]
 
 admin.site.register(Content, ContentConfig)
 admin.site.register(CourseProgress)

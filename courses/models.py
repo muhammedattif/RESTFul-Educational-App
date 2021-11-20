@@ -58,14 +58,6 @@ class Course(models.Model):
         else:
             return user in self.privacy.shared_with.all()
 
-class Attachement(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="attachments")
-    file = models.FileField(upload_to='file')
-
-    def __str__(self):
-          return self.course.title
-
-
 ######### Course Content
 class Content(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="content")
@@ -205,5 +197,22 @@ class ContentPrivacy(Privacy):
 
     content = models.OneToOneField(Content, on_delete=models.CASCADE, blank=True, related_name="privacy")
 
+    def __str__(self):
+          return self.content.title
+
+# Attachements
+
+
+class Attachement(models.Model):
+    file = models.FileField(upload_to='file')
+
+
+class CourseAttachement(Attachement):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="attachments")
+    def __str__(self):
+          return self.course.title
+
+class ContentAttachement(Attachement):
+    content = models.ForeignKey(Content, on_delete=models.CASCADE, related_name="attachments")
     def __str__(self):
           return self.content.title

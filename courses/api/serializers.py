@@ -35,7 +35,6 @@ class ContentPrivacySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ContentSerializer(serializers.ModelSerializer):
-    quiz = QuizSerializer(many=False, read_only=True)
     class Meta:
         model = Content
         fields = '__all__'
@@ -45,7 +44,6 @@ class CourseSerializer(serializers.ModelSerializer):
     content = ContentSerializer(many=True, read_only=True)
     privacy = CoursePrivacySerializer(many=False, read_only=True)
     category = CategorySerializer(many=True, read_only=True)
-    quiz = QuizSerializer(many=False, read_only=True)
 
     class Meta:
         model = Course
