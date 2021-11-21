@@ -68,7 +68,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'admin_reorder.middleware.ModelAdminReorder',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'alteby.middleware.LoginRequiredMiddleware'
 ]
+
+AUTH_EXEMPT_ROUTES = ('api')
 
 ROOT_URLCONF = 'alteby.urls'
 
@@ -156,7 +159,7 @@ ADMIN_REORDER = (
     'rest_framework',
     'authtoken',
     'users',
-    'playlists',    
+    'playlists',
     'categories',
 
     # Reorder Courses models

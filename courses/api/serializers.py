@@ -1,6 +1,10 @@
 from rest_framework import serializers
-from courses.models import Course, Content, CoursePrivacy, ContentPrivacy, Category, Quiz, Question, Choice
+from courses.models import Course, Content, CoursePrivacy, ContentPrivacy, Category, Quiz, Question, Choice, Attachement
 
+class AttachementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attachement
+        fields = '__all__'
 
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -11,13 +15,13 @@ class QuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, read_only=True)
     class Meta:
         model = Question
-        fields = '__all__'
+        fields = ('id', 'question_title', 'choices')
 
 class QuizSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, read_only=True)
     class Meta:
         model = Quiz
-        fields = '__all__'
+        fields = ('id', 'name', 'description', 'questions')
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,17 +38,20 @@ class ContentPrivacySerializer(serializers.ModelSerializer):
         model = ContentPrivacy
         fields = '__all__'
 
-class ContentSerializer(serializers.ModelSerializer):
+class DemoContentSerializer(serializers.ModelSerializer):
+    privacy = ContentPrivacySerializer(many=False, read_only=True)
     class Meta:
         model = Content
-        fields = '__all__'
+        fields = ('id', 'title', 'order', 'course', 'privacy')
 
+class FullContentSerializer(DemoContentSerializer):
+    class Meta:
+        model = Content
+        fields = ('id', 'title', 'video_content', 'audio_content', 'text_content', 'order', 'privacy')
 
 class CourseSerializer(serializers.ModelSerializer):
-    content = ContentSerializer(many=True, read_only=True)
     privacy = CoursePrivacySerializer(many=False, read_only=True)
-    category = CategorySerializer(many=True, read_only=True)
-
     class Meta:
         model = Course
-        fields = '__all__'
+        fields = ('id', 'title', 'description', 'date_created', 'categories', 'privacy', 'quiz')
+        depth = 1

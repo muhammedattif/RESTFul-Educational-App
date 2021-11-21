@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from .serializers import PlaylistSerializer, FavoriteSerializer
 from playlists.models import Playlist, Favorite
-from courses.api.serializers import ContentSerializer
+from courses.api.serializers import FullContentSerializer
 from courses.models import Content
 from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
@@ -49,9 +49,9 @@ class PlaylistDetail(APIView, PageNumberPagination):
 
     def get(self, request, playlist_id, format=None):
         try:
-            content = Playlist.objects.get(id=playlist_id, owner=request.user).content.all()
+            content = Playlist.objects.get(id=playlist_id, owner=request.user).content.prefetch_related('privacy__shared_with')
             content = self.paginate_queryset(content, request, view=self)
-            serializer = ContentSerializer(content, many=True)
+            serializer = FullContentSerializer(content, many=True)
             return Response(serializer.data)
         except Playlist.DoesNotExist:
             response = {
@@ -124,8 +124,8 @@ class PlaylistContent(APIView):
 
     def allowed_to_access_content(self, request, content):
         if content.can_access(request.user) or content.course.can_access(request.user):
-            return content, True
-        return None, False
+            return True
+        return False
 
 class FavoriteList(APIView, PageNumberPagination):
     """
@@ -133,9 +133,9 @@ class FavoriteList(APIView, PageNumberPagination):
     """
 
     def get(self, request, format=None):
-        Favorites = Favorite.objects.filter(owner=request.user)
+        Favorites = Favorite.objects.get(owner=request.user).content.prefetch_related('privacy__shared_with')
         Favorites = self.paginate_queryset(Favorites, request, view=self)
-        serializer = FavoriteSerializer(Favorites, many=True)
+        serializer = FullContentSerializer(Favorites, many=True)
         return Response(serializer.data)
 
 
@@ -190,5 +190,5 @@ class FavoriteContent(APIView):
 
     def allowed_to_access_content(self, request, content):
         if content.can_access(request.user) or content.course.can_access(request.user):
-            return content, True
-        return None, False
+            return True
+        return False

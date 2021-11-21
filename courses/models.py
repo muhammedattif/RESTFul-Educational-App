@@ -9,14 +9,14 @@ UserModel = settings.AUTH_USER_MODEL
 ####### Quizes
 
 class Quiz(models.Model):
-    quiz_name = models.CharField(max_length=50)
+    name = models.CharField(max_length=50)
     description = models.TextField()
 
     class Meta:
         verbose_name_plural = 'quizzes'
 
     def __str__(self):
-          return self.quiz_name
+          return self.name
 
 class Question(models.Model):
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")

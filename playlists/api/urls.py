@@ -8,7 +8,7 @@ urlpatterns = [
   # path('', get_all_playlists, name='playlists'),
   path('', PlaylistList.as_view()),
   path('<int:playlist_id>', PlaylistDetail.as_view(), name='playlist'),
-  path('<int:playlist_id>/content/<int:content_id>/', PlaylistContent.as_view(), name='playlist_content'),
+  path('<int:playlist_id>/contents/<int:content_id>/', PlaylistContent.as_view(), name='playlist_content'),
 
   # Favorites APIs routes
   path('favorites/', FavoriteList.as_view(), name='favorites'),

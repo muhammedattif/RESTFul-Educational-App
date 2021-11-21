@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import status
-from .serializers import CourseSerializer, QuizSerializer
+from .serializers import CourseSerializer, DemoContentSerializer, FullContentSerializer, QuizSerializer, AttachementSerializer
 from courses.models import Course, Content, Quiz
 from django.db.models import Q
 from functools import reduce
@@ -31,9 +31,38 @@ class CourseList(APIView, PageNumberPagination):
 class CourseDetail(APIView, PageNumberPagination):
 
     def get(self, request, course_id, format=None):
-        course = Course.objects.prefetch_related('content__quiz__questions__choices').get(id=course_id)
+        course = Course.objects.prefetch_related('privacy__shared_with').get(id=course_id)
         if course.can_access(request.user):
             serializer = CourseSerializer(course, many=False)
+            return Response(serializer.data)
+        response = {
+            'status': 'error',
+            'message': 'Access denied!',
+            'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
+        }
+        return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+class ContentDetail(APIView):
+
+    def get(self, request, course_id, content_id, format=None):
+        content = Content.objects.prefetch_related('quiz__questions__choices').get(id=content_id, course__id=course_id)
+        if content.can_access(request.user):
+            serializer = FullContentSerializer(content, many=False)
+            return Response(serializer.data)
+        response = {
+            'status': 'error',
+            'message': 'Access denied!',
+            'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
+        }
+        return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+class ContentList(APIView, PageNumberPagination):
+    def get(self, request, course_id, format=None):
+        course = Course.objects.get(id=course_id)
+        if course.can_access(request.user):
+            contents = Content.objects.prefetch_related('privacy__shared_with').filter(course__id=course_id)
+            contents = self.paginate_queryset(contents, request, view=self)
+            serializer = DemoContentSerializer(contents, many=True)
             return Response(serializer.data)
         response = {
             'status': 'error',
@@ -46,7 +75,7 @@ class QuizDetail(APIView, PageNumberPagination):
 
     def get(self, request, course_id=None, content_id=None, format=None):
         if content_id:
-            content = Content.objects.get(id=content_id, course__id=course_id)
+            content = Content.objects.select_related('quiz').get(id=content_id, course__id=course_id)
             if content.can_access(request.user):
                 if content.quiz:
                     quiz_id = content.quiz.id
@@ -68,7 +97,7 @@ class QuizDetail(APIView, PageNumberPagination):
             return Response(response, status=status.HTTP_403_FORBIDDEN)
 
         else:
-            course = Course.objects.get(id=course_id)
+            course = Course.objects.select_related('quiz').get(id=course_id)
             if course.can_access(request.user):
                 if course.quiz:
                     quiz_id = course.quiz.id
@@ -88,3 +117,34 @@ class QuizDetail(APIView, PageNumberPagination):
                     'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
                 }
             return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+
+class CourseAttachement(APIView):
+
+    def get(self, request, course_id, format=None):
+        course = Course.objects.get(id=course_id)
+        if course.can_access(request.user):
+            attachments = course.attachments.all()
+            serializer = AttachementSerializer(attachments, many=True)
+            return Response(serializer.data)
+        response = {
+            'status': 'error',
+            'message': 'Access denied!',
+            'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
+        }
+        return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+class ContentAttachement(APIView):
+
+    def get(self, request, course_id, content_id, format=None):
+        content = Content.objects.get(id=content_id, course__id=course_id)
+        if content.can_access(request.user):
+            attachments = content.attachments.all()
+            serializer = AttachementSerializer(attachments, many=True)
+            return Response(serializer.data)
+        response = {
+            'status': 'error',
+            'message': 'Access denied!',
+            'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
+        }
+        return Response(response, status=status.HTTP_403_FORBIDDEN)

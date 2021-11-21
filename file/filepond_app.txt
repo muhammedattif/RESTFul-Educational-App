@@ -1,1 +1,0 @@
-https://django-drf-filepond.readthedocs.io/en/latest/
