@@ -81,10 +81,19 @@ class ContentConfig(NestedModelAdmin):
 admin.site.register(Content, ContentConfig)
 admin.site.register(CourseProgress)
 
-admin.site.register(Comment)
+class CommentConfig(NestedModelAdmin):
+    model = Comment
+
+    list_filter = ('user', 'course', 'content', 'date_created', 'status')
+    list_display = ('user', 'course', 'content', 'date_created', 'status')
+
+    fieldsets = (
+        ("Comment Information", {'fields': ('user', 'course', 'content', 'comment_body', 'status')}),
+    )
+
+admin.site.register(Comment, CommentConfig)
+
 admin.site.register(Feedback)
-
-
 admin.site.register(CorrectInfo)
 admin.site.register(Report)
 

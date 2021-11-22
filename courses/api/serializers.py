@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from courses.models import Course, Content, CoursePrivacy, ContentPrivacy, Category, Quiz, Question, Choice, Attachement
+from courses.models import Course, Content, CoursePrivacy, ContentPrivacy, Category, Quiz, Question, Choice, Attachement, Comment
 
 class AttachementSerializer(serializers.ModelSerializer):
     class Meta:
@@ -55,3 +55,8 @@ class CourseSerializer(serializers.ModelSerializer):
         model = Course
         fields = ('id', 'title', 'description', 'date_created', 'categories', 'privacy', 'quiz')
         depth = 1
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = '__all__'

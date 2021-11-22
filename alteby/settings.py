@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
-
+import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -32,6 +32,7 @@ SECRET_KEY = 'django-insecure-pzxjj03z6a7+2xf-186h!7xy-mcq)hz3in-xz-06#a!1b)1^83
 DEBUG = True
 
 ALLOWED_HOSTS = []
+
 INTERNAL_IPS = [
     '127.0.0.1',
 ]
@@ -57,6 +58,21 @@ INSTALLED_APPS = [
     'playlists',
     'categories'
 ]
+
+ADMIN_REORDER = (
+    # Keep original label and models
+    'auth',
+    'rest_framework',
+    'authtoken',
+    'users',
+    'playlists',
+    'categories',
+
+    # Reorder Courses models
+    {'app': 'courses', 'models': ('courses.Course', 'courses.Content', 'courses.CourseProgress', 'courses.Quiz')},
+
+    {'app': 'courses', 'label': 'Reports and Feedbacks' ,'models': ('courses.Report', 'courses.Feedback', 'courses.CorrectInfo', 'courses.Comment')}
+)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -143,6 +159,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_URL = '/media/'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
@@ -152,18 +171,3 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 5
 }
-
-ADMIN_REORDER = (
-    # Keep original label and models
-    'auth',
-    'rest_framework',
-    'authtoken',
-    'users',
-    'playlists',
-    'categories',
-
-    # Reorder Courses models
-    {'app': 'courses', 'models': ('courses.Course', 'courses.Content', 'courses.CourseProgress', 'courses.Quiz')},
-
-    {'app': 'courses', 'label': 'Reports and Feedbacks' ,'models': ('courses.Report', 'courses.Feedback', 'courses.CorrectInfo', 'courses.Comment')}
-)

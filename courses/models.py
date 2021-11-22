@@ -1,8 +1,10 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
+from django.db.models import Q
 from django.conf import settings
 from model_utils import Choices
 from categories.models import Category
+
 UserModel = settings.AUTH_USER_MODEL
 
 
@@ -21,6 +23,7 @@ class Quiz(models.Model):
 class Question(models.Model):
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
     question_title = models.TextField()
+    question_extra_info = models.TextField()
 
     def __str__(self):
           return self.question_title
@@ -32,7 +35,6 @@ class Choice(models.Model):
 
     def __str__(self):
           return f'{self.question}-{self.choice}'
-
 
 
 class Course(models.Model):
@@ -101,16 +103,35 @@ class CourseProgress(models.Model):
 
 #### Comments and feedback
 
+class CourseCommentsManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(content=None, status='published')
+
+class ContentCommentsManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(~Q(content=None), status='published')
+
 class Comment(models.Model):
 
-    STATUS_CHOICES = (
+    STATUS_CHOICES = Choices(
         ('pending', 'Pending'),
         ('published', 'Published'),
     )
 
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name="comments")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="comments")
+    content = models.ForeignKey(Content, on_delete=models.CASCADE, null=True, blank=True, related_name="comments")
     comment_body = models.TextField()
-    status = models.CharField(max_length=100, choices=STATUS_CHOICES)
+    status = models.CharField(max_length=100, choices=STATUS_CHOICES, default=STATUS_CHOICES.pending)
+    date_created = models.DateTimeField(auto_now_add=True)
+
+    # Default manager
+    objects = models.Manager()
+
+    # Custom managers for comments
+    course_comments = CourseCommentsManager()
+    content_comments = ContentCommentsManager()
+
 
     def __str__(self):
         return f'{self.user.email}-{self.comment_body}'

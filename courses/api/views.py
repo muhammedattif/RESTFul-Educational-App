@@ -3,11 +3,12 @@ from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import status
-from .serializers import CourseSerializer, DemoContentSerializer, FullContentSerializer, QuizSerializer, AttachementSerializer
-from courses.models import Course, Content, Quiz
+from .serializers import CourseSerializer, DemoContentSerializer, FullContentSerializer, QuizSerializer, AttachementSerializer, CommentSerializer
+from courses.models import Course, Content, Comment, Quiz
 from django.db.models import Q
 from functools import reduce
 import operator
+import courses.utils as utils
 
 class CourseList(APIView, PageNumberPagination):
 
@@ -146,5 +147,54 @@ class ContentAttachement(APIView):
             'status': 'error',
             'message': 'Access denied!',
             'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
+        }
+        return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+class CourseComments(APIView):
+    def get(self, request, course_id, format=None):
+        course = Course.objects.get(id=course_id)
+        if course.can_access(request.user):
+            comments = course.comments(manager='course_comments').all()
+            serializer = CommentSerializer(comments, many=True)
+            return Response(serializer.data)
+        response = {
+            'status': 'error',
+            'message': 'Access denied!',
+            'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
+        }
+        return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+
+class ContentComments(APIView):
+    def get(self, request, course_id, content_id, format=None):
+        content = Content.objects.prefetch_related('comments', 'privacy').get(id=content_id, course__id=course_id)
+        if content.can_access(request.user):
+            comments = content.comments(manager='content_comments').all()
+            serializer = CommentSerializer(comments, many=True)
+            return Response(serializer.data)
+        response = {
+            'status': 'error',
+            'message': 'Access denied!',
+            'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
+        }
+        return Response(response, status=status.HTTP_403_FORBIDDEN)
+    
+    def post(self, request, course_id, content_id, format=None):
+        content, found, error = utils.get_content(content_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        access_granted = utils.allowed_to_access_content(request.user, content)
+        print(access_granted)
+        if access_granted:
+            comment_body = request.data['comment_body']
+            comment = Comment.objects.create(user=request.user, course=content.course, content=content, comment_body=comment_body)
+            serializer = CommentSerializer(comment, many=False)
+            return Response(serializer.data)
+
+        response = {
+            'status': 'error',
+            'message': 'Access denied!',
+            'error_description': 'You don\'t have access to this resourse!, enroll this course to see its content.'
         }
         return Response(response, status=status.HTTP_403_FORBIDDEN)
