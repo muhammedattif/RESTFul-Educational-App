@@ -5,6 +5,7 @@ from .serializers import PlaylistSerializer, FavoriteSerializer
 from playlists.models import Playlist, Favorite
 from courses.api.serializers import FullContentSerializer
 from courses.models import Content
+import courses.utils as utils
 from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 
@@ -68,11 +69,11 @@ class PlaylistContent(APIView):
     """
 
     def put(self, request, playlist_id, content_id, format=None):
-        content, found, error = self.get_content(content_id)
+        content, found, error = utils.get_content(content_id)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        access_granted = self.allowed_to_access_content(request, content)
+        access_granted = utils.allowed_to_access_content(request, content)
         if access_granted:
             playlist, found, error = self.get_playlist(request, playlist_id)
             if not found:
@@ -94,7 +95,7 @@ class PlaylistContent(APIView):
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        content, found, error = self.get_content(content_id)
+        content, found, error = utils.get_content(content_id)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
@@ -112,20 +113,6 @@ class PlaylistContent(APIView):
             }
             return None, False, error
 
-    def get_content(self, content_id):
-        try:
-            return Content.objects.get(id=content_id), True, None
-        except Content.DoesNotExist:
-            error = {
-            'status': 'error',
-            'error_description': 'This content cannot be found'
-            }
-            return None, False, error
-
-    def allowed_to_access_content(self, request, content):
-        if content.can_access(request.user) or content.course.can_access(request.user):
-            return True
-        return False
 
 class FavoriteList(APIView, PageNumberPagination):
     """
@@ -145,11 +132,11 @@ class FavoriteContent(APIView):
     """
 
     def put(self, request, content_id, format=None):
-        content, found, error = self.get_content(content_id)
+        content, found, error = utils.get_content(content_id)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        access_granted = self.allowed_to_access_content(request, content)
+        access_granted = utils.allowed_to_access_content(request.user, content)
         if access_granted:
             favorites = self.get_favorite_playlist(request)
             favorites.add(content)
@@ -164,7 +151,7 @@ class FavoriteContent(APIView):
         return Response(response, status=status.HTTP_403_FORBIDDEN)
 
     def delete(self, request, content_id, format=None):
-        content, found, error = self.get_content(content_id)
+        content, found, error = utils.get_content(content_id)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
@@ -177,18 +164,3 @@ class FavoriteContent(APIView):
     def get_favorite_playlist(self, request):
         favorites, created =  Favorite.objects.get_or_create(owner=request.user)
         return favorites
-
-    def get_content(self, content_id):
-        try:
-            return Content.objects.get(id=content_id), True, None
-        except Content.DoesNotExist:
-            error = {
-            'status': 'error',
-            'error_description': 'This content cannot be found'
-            }
-            return None, False, error
-
-    def allowed_to_access_content(self, request, content):
-        if content.can_access(request.user) or content.course.can_access(request.user):
-            return True
-        return False

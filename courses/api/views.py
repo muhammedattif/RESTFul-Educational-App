@@ -46,7 +46,12 @@ class CourseDetail(APIView, PageNumberPagination):
 class ContentDetail(APIView):
 
     def get(self, request, course_id, content_id, format=None):
-        content = Content.objects.prefetch_related('quiz__questions__choices').get(id=content_id, course__id=course_id)
+
+        try:
+            content = Content.objects.prefetch_related('quiz__questions__choices').get(id=content_id, course__id=course_id)
+        except Content.DoesNotExist:
+            return Response(utils.errors['content_not_found'], status=status.HTTP_404_NOT_FOUND)
+
         if content.can_access(request.user):
             serializer = FullContentSerializer(content, many=False)
             return Response(serializer.data)
@@ -76,7 +81,11 @@ class QuizDetail(APIView, PageNumberPagination):
 
     def get(self, request, course_id=None, content_id=None, format=None):
         if content_id:
-            content = Content.objects.select_related('quiz').get(id=content_id, course__id=course_id)
+            try:
+                content = Content.objects.select_related('quiz').get(id=content_id, course__id=course_id)
+            except Content.DoesNotExist:
+                return Response(utils.errors['content_not_found'], status=status.HTTP_404_NOT_FOUND)
+
             if content.can_access(request.user):
                 if content.quiz:
                     quiz_id = content.quiz.id
@@ -138,7 +147,11 @@ class CourseAttachement(APIView):
 class ContentAttachement(APIView):
 
     def get(self, request, course_id, content_id, format=None):
-        content = Content.objects.get(id=content_id, course__id=course_id)
+        try:
+            content = Content.objects.get(id=content_id, course__id=course_id)
+        except Content.DoesNotExist:
+            return Response(utils.errors['content_not_found'], status=status.HTTP_404_NOT_FOUND)
+
         if content.can_access(request.user):
             attachments = content.attachments.all()
             serializer = AttachementSerializer(attachments, many=True)
@@ -165,9 +178,28 @@ class CourseComments(APIView):
         return Response(response, status=status.HTTP_403_FORBIDDEN)
 
 
+    def post(self, request, course_id, format=None):
+        course = Course.objects.get(id=course_id)
+        if course.can_access(request.user):
+            comment_body = request.data['comment_body']
+            comment = Comment.objects.create(user=request.user, course=course, comment_body=comment_body)
+            serializer = CommentSerializer(comment, many=False)
+            return Response(serializer.data)
+
+        response = {
+            'status': 'error',
+            'message': 'Access denied!',
+            'error_description': 'You don\'t have access to this resourse!, enroll this course to see its content.'
+        }
+        return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+
 class ContentComments(APIView):
     def get(self, request, course_id, content_id, format=None):
-        content = Content.objects.prefetch_related('comments', 'privacy').get(id=content_id, course__id=course_id)
+        try:
+            content = Content.objects.prefetch_related('comments', 'privacy').get(id=content_id, course__id=course_id)
+        except Content.DoesNotExist:
+            return Response(utils.errors['content_not_found'], status=status.HTTP_404_NOT_FOUND)
         if content.can_access(request.user):
             comments = content.comments(manager='content_comments').all()
             serializer = CommentSerializer(comments, many=True)
@@ -185,7 +217,6 @@ class ContentComments(APIView):
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
         access_granted = utils.allowed_to_access_content(request.user, content)
-        print(access_granted)
         if access_granted:
             comment_body = request.data['comment_body']
             comment = Comment.objects.create(user=request.user, course=content.course, content=content, comment_body=comment_body)
