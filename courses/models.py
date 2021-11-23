@@ -146,6 +146,7 @@ class Feedback(models.Model):
         ]
     )
     description = models.TextField()
+    date_created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         constraints = [

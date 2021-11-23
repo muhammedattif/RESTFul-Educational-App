@@ -40,4 +40,10 @@ urlpatterns = [
     path('categories/', include('categories.urls', 'categories')),
     # Playlists APIs
     path('api/categories/', include('categories.api.urls', 'categories_api')),
+
+
+    # Payment
+    path('payment/', include('payment.urls', 'payment')),
+    # Payment APIs
+    path('api/payment/', include('payment.api.urls', 'payment_api')),
 ]

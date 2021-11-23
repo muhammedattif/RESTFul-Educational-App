@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from users.models import User, Student
+from users.models import User, Student, Teacher
 
 class UserConfig(UserAdmin):
     model = User
@@ -12,20 +12,28 @@ class UserConfig(UserAdmin):
 
     fieldsets = (
         ("User Information", {'fields': ('email', 'username')}),
-        ('Permissions', {'fields': ('is_staff', 'is_active', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Permissions', {'fields': ('is_staff', 'is_active', 'is_student', 'is_teacher', 'is_superuser', 'groups', 'user_permissions')}),
     )
 
 class StudentConfig(admin.ModelAdmin):
-    model = User
+    model = Student
 
-    list_filter = ('email', 'username', 'major', 'academic_year', 'year_in_school')
-    ordering = ('-date_joined',)
-    list_display = ('email', 'username', 'major', 'academic_year', 'year_in_school')
+    list_filter = ('user', 'major', 'academic_year', 'year_in_school')
+    list_display = ('user', 'major', 'academic_year', 'year_in_school')
 
     fieldsets = (
-        ("Student Information", {'fields': ('email', 'username', 'first_name', 'last_name')}),
+        ("Student Account", {'fields': ('user', )}),
         ('Education', {'fields': ('major', 'academic_year', 'year_in_school')}),
     )
+
+class TeacherConfig(admin.ModelAdmin):
+    model = Teacher
+
+    list_filter = ('major', )
+    list_display = ('user', 'major')
+
+
 # Register your models here.
 admin.site.register(User, UserConfig)
 admin.site.register(Student, StudentConfig)
+admin.site.register(Teacher, TeacherConfig)

@@ -3,12 +3,13 @@ from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import status
-from .serializers import CourseSerializer, DemoContentSerializer, FullContentSerializer, QuizSerializer, AttachementSerializer, CommentSerializer
-from courses.models import Course, Content, Comment, Quiz
+from .serializers import CourseSerializer, DemoContentSerializer, FullContentSerializer, QuizSerializer, AttachementSerializer, CommentSerializer, FeedbackSerializer
+from courses.models import Course, CourseProgress, Content, Comment, Feedback, Quiz
 from django.db.models import Q
 from functools import reduce
 import operator
 import courses.utils as utils
+from django.db import IntegrityError
 
 class CourseList(APIView, PageNumberPagination):
 
@@ -210,7 +211,7 @@ class ContentComments(APIView):
             'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
         }
         return Response(response, status=status.HTTP_403_FORBIDDEN)
-    
+
     def post(self, request, course_id, content_id, format=None):
         content, found, error = utils.get_content(content_id)
         if not found:
@@ -222,6 +223,73 @@ class ContentComments(APIView):
             comment = Comment.objects.create(user=request.user, course=content.course, content=content, comment_body=comment_body)
             serializer = CommentSerializer(comment, many=False)
             return Response(serializer.data)
+
+        response = {
+            'status': 'error',
+            'message': 'Access denied!',
+            'error_description': 'You don\'t have access to this resourse!, enroll this course to see its content.'
+        }
+        return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+
+
+class CourseFeedbacks(APIView, PageNumberPagination):
+
+    def get(self, request, course_id, format=None):
+        course, found, error = utils.get_course(course_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        feedbacks = course.feedbacks.all()
+        feedbacks = self.paginate_queryset(feedbacks, request, view=self)
+        serializer = FeedbackSerializer(feedbacks, many=True)
+        return Response(serializer.data)
+
+
+    def post(self, request, course_id, format=None):
+        course, found, error = utils.get_course(course_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        if utild.is_enrolled(request.user, course):
+            rating = request.data['rating']
+            description = request.data['description']
+            try:
+                feedback = Feedback.objects.create(user=request.user, course=course, rating=rating, description=description)
+            except IntegrityError as e:
+                response = {
+                    'status': 'error',
+                    'message': str(e),
+                    'error_description': 'Ensure that rating value is less than or equal to 5 and more than or equal to 1.'
+                }
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+            serializer = FeedbackSerializer(feedback, many=False)
+            return Response(serializer.data)
+
+        response = {
+            'status': 'error',
+            'message': 'Access denied!',
+            'error_description': 'You don\'t have access to this resourse!, enroll this course to see its content.'
+        }
+        return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+
+class UpdateCourseProgress(APIView):
+
+    def get(self, request, course_id, content_id, format=None):
+        content, found, error = utils.get_content(content_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        if utils.is_enrolled(request.user, content.course):
+            CourseProgress.objects.get_or_create(user=request.user, course=content.course, content=content)
+            response = {
+                'status': 'success',
+                'message': 'Checked!',
+                'success_description': 'This content Marked ad read.'
+            }
+            return Response(response, status=status.HTTP_403_FORBIDDEN)
 
         response = {
             'status': 'error',

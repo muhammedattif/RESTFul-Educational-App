@@ -11,6 +11,7 @@ Comment,
 Feedback,
 CorrectInfo,
 Report,
+Feedback,
 Quiz,
 Question,
 Choice
@@ -93,7 +94,16 @@ class CommentConfig(NestedModelAdmin):
 
 admin.site.register(Comment, CommentConfig)
 
-admin.site.register(Feedback)
+class FeedbackConfig(NestedModelAdmin):
+    model = Feedback
+
+    list_filter = ('user', 'course', 'rating' ,'date_created')
+    list_display = ('user', 'course', 'rating', 'date_created')
+
+    fieldsets = (
+        ("Feedback Information", {'fields': ('user', 'course', 'rating', 'description', 'date_created')}),
+    )
+admin.site.register(Feedback, FeedbackConfig)
 admin.site.register(CorrectInfo)
 admin.site.register(Report)
 

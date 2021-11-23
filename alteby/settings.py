@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     # APPS
     'users',
     'courses',
+    'payment',
     'playlists',
     'categories'
 ]
@@ -71,7 +72,9 @@ ADMIN_REORDER = (
     # Reorder Courses models
     {'app': 'courses', 'models': ('courses.Course', 'courses.Content', 'courses.CourseProgress', 'courses.Quiz')},
 
-    {'app': 'courses', 'label': 'Reports and Feedbacks' ,'models': ('courses.Report', 'courses.Feedback', 'courses.CorrectInfo', 'courses.Comment')}
+    {'app': 'courses', 'label': 'Reports and Feedbacks' ,'models': ('courses.Report', 'courses.Feedback', 'courses.CorrectInfo', 'courses.Comment')},
+
+    'payment'
 )
 
 MIDDLEWARE = [

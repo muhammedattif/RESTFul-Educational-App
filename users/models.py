@@ -8,7 +8,7 @@ from django.db import transaction
 # this class is for overriding default users manager of django user model
 class MyAccountManager(BaseUserManager):
 
-    def create_user(self, email, username, password=None, is_staff=False, is_superuser=False):
+    def create_user(self, email, username, password=None, is_staff=False, is_superuser=False, is_teacher=False, is_student=True):
         if not email:
             raise ValueError('User must have an email address')
         if not username:
@@ -18,7 +18,9 @@ class MyAccountManager(BaseUserManager):
                         email=self.normalize_email(email),
                         username=username,
                         is_staff=is_staff,
-                        is_superuser=is_superuser
+                        is_superuser=is_superuser,
+                        is_teacher=is_teacher,
+                        is_student=is_student
         )
 
         user.set_password(password)
@@ -32,7 +34,8 @@ class MyAccountManager(BaseUserManager):
             password=password,
             username=username,
             is_staff = True,
-            is_superuser = True
+            is_superuser = True,
+            is_teacher = True
         )
         user.save(using = self._db)
         return user
@@ -47,6 +50,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_login = models.DateTimeField(verbose_name="Last Login", auto_now=True)
     is_active = models.BooleanField('Active status', default=True)
     is_staff = models.BooleanField('Staff status', default=False)
+    is_teacher = models.BooleanField('Teacher status', default=False)
+    is_student = models.BooleanField('Student status', default=False)
 
     objects = MyAccountManager()
 
@@ -58,7 +63,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         super().save(*args, **kwargs)
 
 
-class Student(User):
+class Student(models.Model):
 
     YEAR_IN_SCHOOL_CHOICES = [
         ('FR', 'Freshman'),
@@ -68,14 +73,28 @@ class Student(User):
         ('GR', 'Graduate'),
     ]
     ACADEMIC_YEAR = [
-        ('FIRST', 1),
-        ('SECOND', 2),
-        ('THIRD', 3),
-        ('FOURTH', 4),
-        ('FIFTH', 5),
-        ('SIXTH', 6),
-        ('SEVENTH', 7),
+        (1, 'FIRST'),
+        (2, 'SECOND'),
+        (3, 'THIRD'),
+        (4, 'FOURTH'),
+        (5, 'FIFTH'),
+        (6, 'SIXTH'),
+        (7, 'SEVENTH'),
     ]
-    major = models.CharField(max_length=40)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True, related_name="student_info")
+    major = models.CharField(blank=True, max_length=40)
     academic_year = models.IntegerField(blank=True, choices=ACADEMIC_YEAR)
     year_in_school = models.CharField(max_length=20, blank=True, choices=YEAR_IN_SCHOOL_CHOICES)
+
+    def __str__(self):
+        return self.user.email
+
+    def is_enrolled(self, course):
+        return course.id in self.user.courses_enrollments.values_list('course', flat=True)
+
+class Teacher(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True, related_name="teacher_info")
+    major = models.CharField(blank=True, max_length=40)
+
+    def __str__(self):
+        return self.user.email
