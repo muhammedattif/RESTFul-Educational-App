@@ -5,6 +5,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework import status
 from .serializers import CourseSerializer, DemoContentSerializer, FullContentSerializer, QuizSerializer, AttachementSerializer, CommentSerializer, FeedbackSerializer
 from courses.models import Course, CourseProgress, Content, Comment, Feedback, Quiz
+from playlists.models import History
 from django.db.models import Q
 from functools import reduce
 import operator
@@ -33,61 +34,56 @@ class CourseList(APIView, PageNumberPagination):
 class CourseDetail(APIView, PageNumberPagination):
 
     def get(self, request, course_id, format=None):
-        course = Course.objects.prefetch_related('privacy__shared_with').get(id=course_id)
-        if course.can_access(request.user):
+
+        course, found, error = utils.get_course(course_id, prefetch_related=['privacy__shared_with'])
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        if utils.allowed_to_access_course(request.user, course):
             serializer = CourseSerializer(course, many=False)
             return Response(serializer.data)
-        response = {
-            'status': 'error',
-            'message': 'Access denied!',
-            'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
-        }
-        return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 class ContentDetail(APIView):
 
     def get(self, request, course_id, content_id, format=None):
+        content, found, error = utils.get_content(content_id, course_id=course_id, prefetch_related=['quiz__questions__choices'])
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        try:
-            content = Content.objects.prefetch_related('quiz__questions__choices').get(id=content_id, course__id=course_id)
-        except Content.DoesNotExist:
-            return Response(utils.errors['content_not_found'], status=status.HTTP_404_NOT_FOUND)
-
-        if content.can_access(request.user):
+        if utils.allowed_to_access_content(request.user, content):
             serializer = FullContentSerializer(content, many=False)
+            history, created = History.objects.get_or_create(user=request.user)
+            history.add_content(content)
             return Response(serializer.data)
-        response = {
-            'status': 'error',
-            'message': 'Access denied!',
-            'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
-        }
-        return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 class ContentList(APIView, PageNumberPagination):
     def get(self, request, course_id, format=None):
-        course = Course.objects.get(id=course_id)
-        if course.can_access(request.user):
+
+        course, found, error = utils.get_course(course_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        if utils.allowed_to_access_course(request.user, course):
             contents = Content.objects.prefetch_related('privacy__shared_with').filter(course__id=course_id)
             contents = self.paginate_queryset(contents, request, view=self)
             serializer = DemoContentSerializer(contents, many=True)
             return Response(serializer.data)
-        response = {
-            'status': 'error',
-            'message': 'Access denied!',
-            'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
-        }
-        return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 class QuizDetail(APIView, PageNumberPagination):
 
     def get(self, request, course_id=None, content_id=None, format=None):
         if content_id:
-            try:
-                content = Content.objects.select_related('quiz').get(id=content_id, course__id=course_id)
-            except Content.DoesNotExist:
-                return Response(utils.errors['content_not_found'], status=status.HTTP_404_NOT_FOUND)
+            content, found, error = utils.get_content(content_id, course_id=course_id, select_related=['quiz'])
+            if not found:
+                return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-            if content.can_access(request.user):
+            if utils.allowed_to_access_content(request.user, content):
                 if content.quiz:
                     quiz_id = content.quiz.id
                     quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
@@ -100,16 +96,17 @@ class QuizDetail(APIView, PageNumberPagination):
                         'error_description': 'This content does not has any quizzes.'
                     }
             else:
-                response = {
-                    'status': 'error',
-                    'message': 'Access denied!',
-                    'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
-                }
+                response = utils.errors['access_denied']
+
             return Response(response, status=status.HTTP_403_FORBIDDEN)
 
         else:
-            course = Course.objects.select_related('quiz').get(id=course_id)
-            if course.can_access(request.user):
+
+            course, found, error = utils.get_course(course_id, select_related=('quiz'))
+            if not found:
+                return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+            if utils.allowed_to_access_course(request.user, course):
                 if course.quiz:
                     quiz_id = course.quiz.id
                     quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
@@ -122,114 +119,97 @@ class QuizDetail(APIView, PageNumberPagination):
                         'error_description': 'This course does not has any quizzes.'
                     }
             else:
-                response = {
-                    'status': 'error',
-                    'message': 'Access denied!',
-                    'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
-                }
+                response = utils.errors['access_denied']
+
             return Response(response, status=status.HTTP_403_FORBIDDEN)
 
 
 class CourseAttachement(APIView):
 
     def get(self, request, course_id, format=None):
-        course = Course.objects.get(id=course_id)
-        if course.can_access(request.user):
+
+        course, found, error = utils.get_course(course_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        if utils.allowed_to_access_course(request.user, course):
             attachments = course.attachments.all()
             serializer = AttachementSerializer(attachments, many=True)
             return Response(serializer.data)
-        response = {
-            'status': 'error',
-            'message': 'Access denied!',
-            'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
-        }
-        return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 class ContentAttachement(APIView):
 
     def get(self, request, course_id, content_id, format=None):
-        try:
-            content = Content.objects.get(id=content_id, course__id=course_id)
-        except Content.DoesNotExist:
-            return Response(utils.errors['content_not_found'], status=status.HTTP_404_NOT_FOUND)
 
-        if content.can_access(request.user):
+        content, found, error = utils.get_content(content_id, course_id=course_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        if utils.allowed_to_access_content(request.user, content):
             attachments = content.attachments.all()
             serializer = AttachementSerializer(attachments, many=True)
             return Response(serializer.data)
-        response = {
-            'status': 'error',
-            'message': 'Access denied!',
-            'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
-        }
-        return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 class CourseComments(APIView):
     def get(self, request, course_id, format=None):
-        course = Course.objects.get(id=course_id)
-        if course.can_access(request.user):
+
+        course, found, error = utils.get_course(course_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        if utils.allowed_to_access_course(request.user, course):
             comments = course.comments(manager='course_comments').all()
             serializer = CommentSerializer(comments, many=True)
             return Response(serializer.data)
-        response = {
-            'status': 'error',
-            'message': 'Access denied!',
-            'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
-        }
-        return Response(response, status=status.HTTP_403_FORBIDDEN)
+
+        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 
     def post(self, request, course_id, format=None):
-        course = Course.objects.get(id=course_id)
-        if course.can_access(request.user):
+
+        course, found, error = utils.get_course(course_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        if utils.allowed_to_access_course(request.user, course):
             comment_body = request.data['comment_body']
             comment = Comment.objects.create(user=request.user, course=course, comment_body=comment_body)
             serializer = CommentSerializer(comment, many=False)
             return Response(serializer.data)
 
-        response = {
-            'status': 'error',
-            'message': 'Access denied!',
-            'error_description': 'You don\'t have access to this resourse!, enroll this course to see its content.'
-        }
-        return Response(response, status=status.HTTP_403_FORBIDDEN)
+        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 
 class ContentComments(APIView):
     def get(self, request, course_id, content_id, format=None):
-        try:
-            content = Content.objects.prefetch_related('comments', 'privacy').get(id=content_id, course__id=course_id)
-        except Content.DoesNotExist:
-            return Response(utils.errors['content_not_found'], status=status.HTTP_404_NOT_FOUND)
-        if content.can_access(request.user):
-            comments = content.comments(manager='content_comments').all()
-            serializer = CommentSerializer(comments, many=True)
-            return Response(serializer.data)
-        response = {
-            'status': 'error',
-            'message': 'Access denied!',
-            'error_description': 'You don\'t have access to this resource!, enroll this course to see its content.'
-        }
-        return Response(response, status=status.HTTP_403_FORBIDDEN)
 
-    def post(self, request, course_id, content_id, format=None):
-        content, found, error = utils.get_content(content_id)
+        content, found, error = utils.get_content(content_id, course_id=course_id, prefetch_related=['comments', 'privacy'])
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        access_granted = utils.allowed_to_access_content(request.user, content)
-        if access_granted:
+        if utils.allowed_to_access_content(request.user, content):
+            comments = content.comments(manager='content_comments').all()
+            serializer = CommentSerializer(comments, many=True)
+            return Response(serializer.data)
+
+        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+
+    def post(self, request, course_id, content_id, format=None):
+        content, found, error = utils.get_content(content_id, course_id=course_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        if utils.allowed_to_access_content(request.user, content):
             comment_body = request.data['comment_body']
             comment = Comment.objects.create(user=request.user, course=content.course, content=content, comment_body=comment_body)
             serializer = CommentSerializer(comment, many=False)
             return Response(serializer.data)
 
-        response = {
-            'status': 'error',
-            'message': 'Access denied!',
-            'error_description': 'You don\'t have access to this resourse!, enroll this course to see its content.'
-        }
-        return Response(response, status=status.HTTP_403_FORBIDDEN)
+        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 
 
@@ -267,18 +247,13 @@ class CourseFeedbacks(APIView, PageNumberPagination):
             serializer = FeedbackSerializer(feedback, many=False)
             return Response(serializer.data)
 
-        response = {
-            'status': 'error',
-            'message': 'Access denied!',
-            'error_description': 'You don\'t have access to this resourse!, enroll this course to see its content.'
-        }
-        return Response(response, status=status.HTTP_403_FORBIDDEN)
+        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 
 class UpdateCourseProgress(APIView):
 
     def get(self, request, course_id, content_id, format=None):
-        content, found, error = utils.get_content(content_id)
+        content, found, error = utils.get_content(content_id, course_id=course_id)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
@@ -291,9 +266,4 @@ class UpdateCourseProgress(APIView):
             }
             return Response(response, status=status.HTTP_403_FORBIDDEN)
 
-        response = {
-            'status': 'error',
-            'message': 'Access denied!',
-            'error_description': 'You don\'t have access to this resourse!, enroll this course to see its content.'
-        }
-        return Response(response, status=status.HTTP_403_FORBIDDEN)
+        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)

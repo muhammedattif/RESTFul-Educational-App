@@ -73,8 +73,7 @@ class PlaylistContent(APIView):
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        access_granted = utils.allowed_to_access_content(request, content)
-        if access_granted:
+        if utils.allowed_to_access_content(request.user, content):
             playlist, found, error = self.get_playlist(request, playlist_id)
             if not found:
                 return Response(error, status=status.HTTP_404_NOT_FOUND)
@@ -83,12 +82,7 @@ class PlaylistContent(APIView):
             serializer = PlaylistSerializer(playlist, many=False)
             return Response(serializer.data)
 
-        response = {
-        'status': 'error',
-        'message': 'Access denied!',
-        'error_description': 'You don\'t have access to this resourse!, enroll this course to see its content.'
-        }
-        return Response(response, status=status.HTTP_403_FORBIDDEN)
+        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
     def delete(self, request, playlist_id, content_id, format=None):
         playlist, found, error = self.get_playlist(request, playlist_id)
@@ -143,12 +137,7 @@ class FavoriteContent(APIView):
             serializer = FavoriteSerializer(favorites, many=False)
             return Response(serializer.data)
 
-        response = {
-        'status': 'error',
-        'message': 'Access denied!',
-        'error_description': 'You don\'t have access to this resourse!, enroll this course to see its content.'
-        }
-        return Response(response, status=status.HTTP_403_FORBIDDEN)
+        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
     def delete(self, request, content_id, format=None):
         content, found, error = utils.get_content(content_id)

@@ -34,3 +34,15 @@ class Playlist(models.Model):
 
     def remove(self, content):
         self.content.remove(content)
+
+# History
+class History(models.Model):
+    user = models.OneToOneField(UserModel, on_delete=models.CASCADE, related_name="history")
+    contents = models.ManyToManyField(Content, blank=True)
+
+    def __str__(self):
+          return f'{self.user.email}-History'
+
+    def add_content(self, content):
+        self.contents.add(content)
+        self.save()
