@@ -10,6 +10,7 @@ from rest_framework.compat import coreapi, coreschema
 from rest_framework.schemas import ManualSchema
 from django.http import JsonResponse
 from .serializers import AuthTokenSerializer, SignUpSerializer
+from django.core.exceptions import ValidationError
 
 
 class SignIn(APIView):
@@ -25,16 +26,23 @@ class SignIn(APIView):
 
     def post(self, request):
         serializer = AuthTokenSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        token, created = Token.objects.get_or_create(user=user)
+        try:
+            serializer.is_valid(raise_exception=True)
+            user = serializer.validated_data['user']
+            token, created = Token.objects.get_or_create(user=user)
 
-        content = {
-            'token': token.key,
-            'user_id': user.pk,
-            'email': user.email
-        }
-        return Response(content)
+            content = {
+                'token': token.key,
+                'user_id': user.pk,
+                'email': user.email
+            }
+            return Response(content)
+        except:
+            response = {}
+            errors = serializer.errors
+            for error in errors:
+                response[error] = errors[error][0]
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 class SignUp(APIView):
 

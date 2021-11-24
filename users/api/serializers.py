@@ -65,7 +65,7 @@ class AuthTokenSerializer(serializers.Serializer):
                     user_request = User.objects.get(username=email_or_username)
                 except User.DoesNotExist:
                     msg = 'Unable to log in with provided credentials.'
-                    raise ValidationError({
+                    raise serializers.ValidationError({
                         'status': 'error',
                         'message': msg
                     })
@@ -77,19 +77,19 @@ class AuthTokenSerializer(serializers.Serializer):
             if user:
                 if not user.is_active:
                     msg = 'User account is disabled.'
-                    raise ValidationError({
+                    raise serializers.ValidationError({
                         'status': 'error',
                         'message': msg
                     })
             else:
                 msg = 'Unable to log in with provided credentials.'
-                raise ValidationError({
+                raise serializers.ValidationError({
                     'status': 'error',
                     'message': msg
                 })
         else:
             msg = 'Must include "email or username" and "password"'
-            raise ValidationError({
+            raise serializers.ValidationError({
                 'status': 'error',
                 'message': msg
             })
