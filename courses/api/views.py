@@ -71,7 +71,7 @@ class ContentList(APIView, PageNumberPagination):
         if utils.allowed_to_access_course(request.user, course):
             contents = Content.objects.prefetch_related('privacy__shared_with').filter(course__id=course_id)
             contents = self.paginate_queryset(contents, request, view=self)
-            serializer = DemoContentSerializer(contents, many=True)
+            serializer = DemoContentSerializer(contents, many=True, context={'request': request})
             return Response(serializer.data)
 
         return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
