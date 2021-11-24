@@ -20,7 +20,7 @@ urlpatterns = [
   path('<int:course_id>/contents/<int:content_id>/mark_as_read', UpdateCourseProgress.as_view(), name='mark_as_read'),
   path('<int:course_id>/contents/<int:content_id>/comments', ContentComments.as_view(), name='content_comments'),
   path('<int:course_id>/contents/<int:content_id>/quiz', QuizDetail.as_view(), name='content_quiz'),
-  path('<int:course_id>/contents/<int:content_id>/attachements', ContentAttachement.as_view(), name='content_attachement'),
+  path('<int:course_id>/contents/<int:content_id>/attachements', ContentAttachement.as_view(), name='content_attachment'),
 
 
 ]

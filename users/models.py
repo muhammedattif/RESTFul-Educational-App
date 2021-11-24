@@ -82,9 +82,9 @@ class Student(models.Model):
         (7, 'SEVENTH'),
     ]
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True, related_name="student_info")
-    major = models.CharField(blank=True, max_length=40)
-    academic_year = models.IntegerField(blank=True, choices=ACADEMIC_YEAR)
-    year_in_school = models.CharField(max_length=20, blank=True, choices=YEAR_IN_SCHOOL_CHOICES)
+    major = models.CharField(blank=True, null=True, max_length=40)
+    academic_year = models.IntegerField(blank=True, null=True, choices=ACADEMIC_YEAR)
+    year_in_school = models.CharField(max_length=20, blank=True, null=True, choices=YEAR_IN_SCHOOL_CHOICES)
 
     def __str__(self):
         return self.user.email

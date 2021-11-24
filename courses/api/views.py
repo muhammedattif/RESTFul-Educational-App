@@ -2,10 +2,11 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .serializers import CourseSerializer, DemoContentSerializer, FullContentSerializer, QuizSerializer, AttachementSerializer, CommentSerializer, FeedbackSerializer
 from courses.models import Course, CourseProgress, Content, Comment, Feedback, Quiz
-from playlists.models import History
+from playlists.models import WatchHistory
 from django.db.models import Q
 from functools import reduce
 import operator
@@ -13,8 +14,8 @@ import courses.utils as utils
 from django.db import IntegrityError
 
 class CourseList(APIView, PageNumberPagination):
-
     def get(self, request, format=None):
+
 
         request_params = request.GET
         if request_params:
@@ -54,8 +55,8 @@ class ContentDetail(APIView):
 
         if utils.allowed_to_access_content(request.user, content):
             serializer = FullContentSerializer(content, many=False)
-            history, created = History.objects.get_or_create(user=request.user)
-            history.add_content(content)
+            watch_history, created = WatchHistory.objects.get_or_create(user=request.user)
+            watch_history.add_content(content)
             return Response(serializer.data)
 
         return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
@@ -98,11 +99,11 @@ class QuizDetail(APIView, PageNumberPagination):
             else:
                 response = utils.errors['access_denied']
 
-            return Response(response, status=status.HTTP_403_FORBIDDEN)
+            return Response(response, status=status.HTTP_404_NOT_FOUND)
 
         else:
 
-            course, found, error = utils.get_course(course_id, select_related=('quiz'))
+            course, found, error = utils.get_course(course_id, select_related=['quiz'])
             if not found:
                 return Response(error, status=status.HTTP_404_NOT_FOUND)
 

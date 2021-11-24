@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import FavoriteList, FavoriteContent, PlaylistList, PlaylistDetail, PlaylistContent
+from .views import FavoriteList, FavoriteContent, PlaylistList, PlaylistDetail, PlaylistContent, WatchHistoryList
 
 app_name = 'playlists'
 
@@ -13,5 +13,8 @@ urlpatterns = [
   # Favorites APIs routes
   path('favorites/', FavoriteList.as_view(), name='favorites'),
   path('favorites/<int:content_id>/', FavoriteContent.as_view(), name='favorites_contents'),
+
+  # History APIs
+  path('watch_history/', WatchHistoryList.as_view(), name='watch_history'),
 
 ]

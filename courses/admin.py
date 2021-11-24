@@ -101,7 +101,7 @@ class FeedbackConfig(NestedModelAdmin):
     list_display = ('user', 'course', 'rating', 'date_created')
 
     fieldsets = (
-        ("Feedback Information", {'fields': ('user', 'course', 'rating', 'description', 'date_created')}),
+        ("Feedback Information", {'fields': ('user', 'course', 'rating', 'description')}),
     )
 admin.site.register(Feedback, FeedbackConfig)
 admin.site.register(CorrectInfo)

@@ -35,13 +35,16 @@ class Playlist(models.Model):
     def remove(self, content):
         self.content.remove(content)
 
-# History
-class History(models.Model):
-    user = models.OneToOneField(UserModel, on_delete=models.CASCADE, related_name="history")
+# Watch History
+class WatchHistory(models.Model):
+    user = models.OneToOneField(UserModel, on_delete=models.CASCADE, related_name="watch_history")
     contents = models.ManyToManyField(Content, blank=True)
 
+    class Meta:
+        verbose_name_plural = 'Watch history'
+
     def __str__(self):
-          return f'{self.user.email}-History'
+          return f'{self.user.email}-Watch History'
 
     def add_content(self, content):
         self.contents.add(content)

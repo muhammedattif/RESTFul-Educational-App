@@ -1,8 +1,8 @@
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
-from .serializers import PlaylistSerializer, FavoriteSerializer
-from playlists.models import Playlist, Favorite
+from .serializers import PlaylistSerializer, FavoriteSerializer, WatchHistorySerializer
+from playlists.models import Playlist, Favorite, WatchHistory
 from courses.api.serializers import FullContentSerializer
 from courses.models import Content
 import courses.utils as utils
@@ -153,3 +153,13 @@ class FavoriteContent(APIView):
     def get_favorite_playlist(self, request):
         favorites, created =  Favorite.objects.get_or_create(owner=request.user)
         return favorites
+
+
+class WatchHistoryList(APIView, PageNumberPagination):
+
+    def get(self, request, format=None):
+        user_watch_history, created = WatchHistory.objects.get_or_create(user=request.user)
+        user_watch_history_contents = user_watch_history.contents.all()
+        user_watch_history_contents = self.paginate_queryset(user_watch_history_contents, request, view=self)
+        serializer = FullContentSerializer(user_watch_history_contents, many=True)
+        return Response(serializer.data)

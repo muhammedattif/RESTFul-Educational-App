@@ -87,10 +87,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'admin_reorder.middleware.ModelAdminReorder',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
-    'alteby.middleware.LoginRequiredMiddleware'
 ]
 
 AUTH_EXEMPT_ROUTES = ('api')
+ALLOWED_ENDPOINTS = ('signup', 'signin')
 
 ROOT_URLCONF = 'alteby.urls'
 
@@ -171,6 +171,12 @@ MEDIA_URL = '/media/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 5
 }
