@@ -232,7 +232,7 @@ class CourseFeedbacks(APIView, PageNumberPagination):
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        if utild.is_enrolled(request.user, course):
+        if utils.is_enrolled(request.user, course):
             rating = request.data['rating']
             description = request.data['description']
             try:
