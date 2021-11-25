@@ -89,14 +89,14 @@ class Content(models.Model):
 
 
 
-###### Course progress
-class CourseProgress(models.Model):
+###### Course Activity Tracking
+class CourseActivity(models.Model):
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     content = models.ForeignKey(Content, on_delete=models.CASCADE)
 
     class Meta:
-        verbose_name_plural = 'course progress'
+        verbose_name_plural = 'Courses Activity Tracker'
 
     def __str__(self):
           return f'{self.user.email}-{self.course.title}-{self.content.title}'

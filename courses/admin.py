@@ -6,7 +6,7 @@ Course, CoursePrivacy,
 CourseAttachement,
 ContentAttachement,
 Content, ContentPrivacy,
-CourseProgress,
+CourseActivity,
 Comment,
 Feedback,
 CorrectInfo,
@@ -80,7 +80,7 @@ class ContentConfig(NestedModelAdmin):
     inlines = [ContentPrivacyInline, ContentAttachementsInline]
 
 admin.site.register(Content, ContentConfig)
-admin.site.register(CourseProgress)
+admin.site.register(CourseActivity)
 
 class CommentConfig(NestedModelAdmin):
     model = Comment

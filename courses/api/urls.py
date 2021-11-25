@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import CourseList, CourseDetail, UpdateCourseProgress, ContentList, ContentDetail, CourseComments, CourseFeedbacks, ContentComments, QuizDetail, CourseAttachement, ContentAttachement
+from .views import CourseList, CourseDetail, TrackCourseActivity, ContentList, ContentDetail, CourseComments, CourseFeedbacks, ContentComments, QuizDetail, CourseAttachement, ContentAttachement
 
 app_name = 'courses'
 
@@ -17,7 +17,7 @@ urlpatterns = [
   # Content API
   path('<int:course_id>/contents/', ContentList.as_view(), name='contents'),
   path('<int:course_id>/contents/<int:content_id>', ContentDetail.as_view(), name='content'),
-  path('<int:course_id>/contents/<int:content_id>/mark_as_read', UpdateCourseProgress.as_view(), name='mark_as_read'),
+  path('<int:course_id>/contents/<int:content_id>/mark_as_read', TrackCourseActivity.as_view(), name='mark_as_read'),
   path('<int:course_id>/contents/<int:content_id>/comments', ContentComments.as_view(), name='content_comments'),
   path('<int:course_id>/contents/<int:content_id>/quiz', QuizDetail.as_view(), name='content_quiz'),
   path('<int:course_id>/contents/<int:content_id>/attachements', ContentAttachement.as_view(), name='content_attachment'),

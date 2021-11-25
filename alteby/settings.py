@@ -70,7 +70,7 @@ ADMIN_REORDER = (
     'categories',
 
     # Reorder Courses models
-    {'app': 'courses', 'models': ('courses.Course', 'courses.Content', 'courses.CourseProgress', 'courses.Quiz')},
+    {'app': 'courses', 'models': ('courses.Course', 'courses.Content', 'courses.CourseActivity', 'courses.Quiz')},
 
     {'app': 'courses', 'label': 'Reports and Feedbacks' ,'models': ('courses.Report', 'courses.Feedback', 'courses.CorrectInfo', 'courses.Comment')},
 
@@ -171,12 +171,7 @@ MEDIA_URL = '/media/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.TokenAuthentication',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
+
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 5
 }

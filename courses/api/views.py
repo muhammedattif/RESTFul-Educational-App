@@ -5,7 +5,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .serializers import CourseSerializer, DemoContentSerializer, FullContentSerializer, QuizSerializer, AttachementSerializer, CommentSerializer, FeedbackSerializer
-from courses.models import Course, CourseProgress, Content, Comment, Feedback, Quiz
+from courses.models import Course, CourseActivity, Content, Comment, Feedback, Quiz
 from playlists.models import WatchHistory
 from django.db.models import Q
 from functools import reduce
@@ -251,15 +251,15 @@ class CourseFeedbacks(APIView, PageNumberPagination):
         return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 
-class UpdateCourseProgress(APIView):
+class TrackCourseActivity(APIView):
 
-    def get(self, request, course_id, content_id, format=None):
+    def post(self, request, course_id, content_id, format=None):
         content, found, error = utils.get_content(content_id, course_id=course_id)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
         if utils.is_enrolled(request.user, content.course):
-            CourseProgress.objects.get_or_create(user=request.user, course=content.course, content=content)
+            CourseActivity.objects.get_or_create(user=request.user, course=content.course, content=content)
             response = {
                 'status': 'success',
                 'message': 'Checked!',

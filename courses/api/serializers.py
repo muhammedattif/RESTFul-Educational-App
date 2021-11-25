@@ -1,12 +1,12 @@
 from rest_framework import serializers
 from rest_framework.fields import CurrentUserDefault
-from courses.models import Course, CourseProgress, Content, CoursePrivacy, ContentPrivacy, Category, Quiz, Question, Choice, Attachement, Comment, Feedback
+from courses.models import Course, CourseActivity, Content, CoursePrivacy, ContentPrivacy, Category, Quiz, Question, Choice, Attachement, Comment, Feedback
 
 class FeedbackSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feedback
         fields = '__all__'
-        
+
 class AttachementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attachement
@@ -44,9 +44,9 @@ class ContentPrivacySerializer(serializers.ModelSerializer):
         model = ContentPrivacy
         fields = '__all__'
 
-class CourseProgressSerializer(serializers.ModelSerializer):
+class CourseActivitySerializer(serializers.ModelSerializer):
     class Meta:
-        model = CourseProgress
+        model = CourseActivity
         fields = '__all__'
 
 class DemoContentSerializer(serializers.ModelSerializer):
@@ -58,7 +58,7 @@ class DemoContentSerializer(serializers.ModelSerializer):
 
     def content_viewed(self, content):
         user = self.context.get('request', None).user
-        return CourseProgress.objects.filter(content=content, course=content.course, user=user).exists()
+        return CourseActivity.objects.filter(content=content, course=content.course, user=user).exists()
 
 class FullContentSerializer(DemoContentSerializer):
     class Meta:
