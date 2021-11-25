@@ -12,24 +12,22 @@ from functools import reduce
 import operator
 import courses.utils as utils
 from django.db import IntegrityError
-
-class CourseList(APIView, PageNumberPagination):
-    def get(self, request, format=None):
+from rest_framework.generics import ListAPIView
 
 
-        request_params = request.GET
-        if request_params:
+class CourseList(ListAPIView):
+    serializer_class = CourseSerializer
+
+    def get_queryset(self):
+        request_params = self.request.GET
+        if 'q' in request_params:
             search_query = request_params.get('q').split(" ")
             query = reduce(operator.or_, (Q(title__icontains=search_term) | Q(description__icontains=search_term) for search_term in search_query))
-            courses = Course.objects\
+            return Course.objects\
                 .prefetch_related('content__quiz__questions__choices', 'content__privacy', 'categories', 'privacy__shared_with')\
                 .filter(query)
         else:
-            courses = Course.objects.prefetch_related('content__quiz__questions__choices', 'content__privacy', 'categories', 'privacy__shared_with')
-
-        courses = self.paginate_queryset(courses, request, view=self)
-        serializer = CourseSerializer(courses, many=True)
-        return Response(serializer.data)
+            return Course.objects.prefetch_related('content__quiz__questions__choices', 'content__privacy', 'categories', 'privacy__shared_with')
 
 
 class CourseDetail(APIView, PageNumberPagination):
