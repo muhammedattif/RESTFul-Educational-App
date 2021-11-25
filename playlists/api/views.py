@@ -18,7 +18,7 @@ class PlaylistList(APIView, PageNumberPagination):
         playlists = Playlist.objects.prefetch_related('content').filter(owner=request.user)
         playlists = self.paginate_queryset(playlists, request, view=self)
         serializer = PlaylistSerializer(playlists, many=True)
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
 
     def post(self, request, format=None):
         return self.create(request)
@@ -53,7 +53,7 @@ class PlaylistDetail(APIView, PageNumberPagination):
             content = Playlist.objects.get(id=playlist_id, owner=request.user).content.prefetch_related('privacy__shared_with')
             content = self.paginate_queryset(content, request, view=self)
             serializer = FullContentSerializer(content, many=True)
-            return Response(serializer.data)
+            return self.get_paginated_response(serializer.data)
         except Playlist.DoesNotExist:
             response = {
             'status': 'error',
@@ -114,10 +114,11 @@ class FavoriteList(APIView, PageNumberPagination):
     """
 
     def get(self, request, format=None):
-        Favorites = Favorite.objects.get(owner=request.user).content.prefetch_related('privacy__shared_with')
-        Favorites = self.paginate_queryset(Favorites, request, view=self)
-        serializer = FullContentSerializer(Favorites, many=True)
-        return Response(serializer.data)
+        favorites, created = Favorite.objects.get_or_create(owner=request.user)
+        content = favorites.content.prefetch_related('privacy__shared_with')
+        content = self.paginate_queryset(content, request, view=self)
+        serializer = FullContentSerializer(content, many=True)
+        return self.get_paginated_response(serializer.data)
 
 
 class FavoriteContent(APIView):
@@ -159,7 +160,7 @@ class WatchHistoryList(APIView, PageNumberPagination):
 
     def get(self, request, format=None):
         user_watch_history, created = WatchHistory.objects.get_or_create(user=request.user)
-        user_watch_history_contents = user_watch_history.contents.all()
+        user_watch_history_contents = user_watch_history.contents.prefetch_related('privacy__shared_with')
         user_watch_history_contents = self.paginate_queryset(user_watch_history_contents, request, view=self)
         serializer = FullContentSerializer(user_watch_history_contents, many=True)
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)

@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from .serializers import CourseSerializer, DemoContentSerializer, FullContentSerializer, QuizSerializer, AttachementSerializer, CommentSerializer, FeedbackSerializer
+from .serializers import CourseSerializer, DemoContentSerializer, FullContentSerializer, QuizSerializer, AttachementSerializer, CommentSerializer, FeedbackSerializer, QuestionSerializer
 from courses.models import Course, CourseActivity, Content, Comment, Feedback, Quiz
 from playlists.models import WatchHistory
 from django.db.models import Q
@@ -12,7 +12,7 @@ from functools import reduce
 import operator
 import courses.utils as utils
 from django.db import IntegrityError
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView
 
 
 class CourseList(ListAPIView):
@@ -30,7 +30,7 @@ class CourseList(ListAPIView):
             return Course.objects.prefetch_related('content__quiz__questions__choices', 'content__privacy', 'categories', 'privacy__shared_with')
 
 
-class CourseDetail(APIView, PageNumberPagination):
+class CourseDetail(APIView):
 
     def get(self, request, course_id, format=None):
 
@@ -59,6 +59,7 @@ class ContentDetail(APIView):
 
         return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
+
 class ContentList(APIView, PageNumberPagination):
     def get(self, request, course_id, format=None):
 
@@ -70,11 +71,13 @@ class ContentList(APIView, PageNumberPagination):
             contents = Content.objects.prefetch_related('privacy__shared_with').filter(course__id=course_id)
             contents = self.paginate_queryset(contents, request, view=self)
             serializer = DemoContentSerializer(contents, many=True, context={'request': request})
-            return Response(serializer.data)
+            return self.get_paginated_response(serializer.data)
+
 
         return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 class QuizDetail(APIView, PageNumberPagination):
+    page_size = 1
 
     def get(self, request, course_id=None, content_id=None, format=None):
         if content_id:
@@ -85,9 +88,10 @@ class QuizDetail(APIView, PageNumberPagination):
             if utils.allowed_to_access_content(request.user, content):
                 if content.quiz:
                     quiz_id = content.quiz.id
-                    quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
-                    serializer = QuizSerializer(quiz, many=False)
-                    return Response(serializer.data)
+                    questions = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id).questions.all()
+                    questions = self.paginate_queryset(questions, request, view=self)
+                    serializer = QuestionSerializer(questions, many=False)
+                    return self.get_paginated_response(serializer.data)
                 else:
                     response = {
                         'status': 'error',
@@ -108,9 +112,10 @@ class QuizDetail(APIView, PageNumberPagination):
             if utils.allowed_to_access_course(request.user, course):
                 if course.quiz:
                     quiz_id = course.quiz.id
-                    quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
-                    serializer = QuizSerializer(quiz, many=False)
-                    return Response(serializer.data)
+                    questions = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id).questions.all()
+                    questions = self.paginate_queryset(questions, request, view=self)
+                    serializer = QuestionSerializer(questions, many=True)
+                    return self.get_paginated_response(serializer.data)
                 else:
                     response = {
                         'status': 'error',
@@ -222,7 +227,7 @@ class CourseFeedbacks(APIView, PageNumberPagination):
         feedbacks = course.feedbacks.all()
         feedbacks = self.paginate_queryset(feedbacks, request, view=self)
         serializer = FeedbackSerializer(feedbacks, many=True)
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
 
 
     def post(self, request, course_id, format=None):
