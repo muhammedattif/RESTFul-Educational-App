@@ -37,6 +37,32 @@ class Choice(models.Model):
           return f'{self.question}-{self.choice}'
 
 
+class QuizResult(models.Model):
+    user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name="quiz_result")
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    selected_choice = models.ForeignKey(Choice, on_delete=models.CASCADE)
+    is_correct = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'{self.user}-{self.quiz}'
+
+    def save(self, *args, **kwargs):
+        print(self.selected_choice.is_correct)
+        if self.selected_choice.is_correct:
+            self.is_correct = True
+        else:
+            self.is_correct = False
+        super(QuizResult, self).save(*args, **kwargs) # Call the "real" save() method.
+
+
+class QuizAttempt(models.Model):
+    user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="quiz_attempts")
+
+    def __str__(self):
+        return f'{self.user}-{self.quiz}'
+
 class Course(models.Model):
 
     title = models.CharField(max_length=100)

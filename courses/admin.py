@@ -14,8 +14,13 @@ Report,
 Feedback,
 Quiz,
 Question,
-Choice
+Choice,
+QuizResult,
+QuizAttempt
 )
+
+admin.site.register(QuizResult)
+admin.site.register(QuizAttempt)
 
 class CoursePrivacyInline(NestedStackedInline):
     model = CoursePrivacy

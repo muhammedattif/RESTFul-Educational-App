@@ -70,7 +70,7 @@ ADMIN_REORDER = (
     'categories',
 
     # Reorder Courses models
-    {'app': 'courses', 'models': ('courses.Course', 'courses.Content', 'courses.CourseActivity', 'courses.Quiz')},
+    {'app': 'courses', 'models': ('courses.Course', 'courses.Content', 'courses.CourseActivity', 'courses.Quiz', 'courses.QuizResult', 'courses.QuizAttempt')},
 
     {'app': 'courses', 'label': 'Reports and Feedbacks' ,'models': ('courses.Report', 'courses.Feedback', 'courses.CorrectInfo', 'courses.Comment')},
 

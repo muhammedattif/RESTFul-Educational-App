@@ -5,7 +5,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .serializers import CourseSerializer, DemoContentSerializer, FullContentSerializer, QuizSerializer, AttachementSerializer, CommentSerializer, FeedbackSerializer, QuestionSerializer
-from courses.models import Course, CourseActivity, Content, Comment, Feedback, Quiz
+from courses.models import Course, CourseActivity, Content, Comment, Feedback, Quiz, Question, Choice, QuizResult
 from playlists.models import WatchHistory
 from django.db.models import Q
 from functools import reduce
@@ -89,9 +89,13 @@ class QuizDetail(APIView, PageNumberPagination):
             if utils.allowed_to_access_content(request.user, content):
                 if content.quiz:
                     quiz_id = content.quiz.id
-                    questions = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id).questions.all()
+                    quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
+                    questions = quiz.questions.all()
                     questions = self.paginate_queryset(questions, request, view=self)
                     serializer = QuestionSerializer(questions, many=False)
+
+                    if self.page_size == 1:
+                        QuizResult.objects.filter(user=request.user, quiz=quiz).delete()
                     return self.get_paginated_response(serializer.data)
                 else:
                     response = {
@@ -113,9 +117,14 @@ class QuizDetail(APIView, PageNumberPagination):
             if utils.allowed_to_access_course(request.user, course):
                 if course.quiz:
                     quiz_id = course.quiz.id
-                    questions = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id).questions.all()
+                    quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
+                    questions = quiz.questions.all()
                     questions = self.paginate_queryset(questions, request, view=self)
                     serializer = QuestionSerializer(questions, many=True)
+
+                    if self.page_size == 1:
+                        QuizResult.objects.filter(user=request.user, quiz=quiz).delete()
+
                     return self.get_paginated_response(serializer.data)
                 else:
                     response = {
@@ -128,6 +137,126 @@ class QuizDetail(APIView, PageNumberPagination):
 
             return Response(response, status=status.HTTP_403_FORBIDDEN)
 
+
+class CourseQuizAnswer(APIView):
+
+    def put(self, request, course_id, question_id, format=None):
+
+        request_body = request.data
+        selected_choice_id = request_body['selected_choice_id']
+
+        course, found, error = utils.get_course(course_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            question = Question.objects.get(id=question_id)
+            if course.quiz:
+
+                if question not in course.quiz.questions.all():
+                    error = {
+                    'status': 'error',
+                    'success_description': 'This question does not exists.'
+                    }
+                    return Response(error)
+            else:
+                error = {
+                    'status': 'error',
+                    'message': 'Not Found!',
+                    'error_description': 'This content does not has any quizzes.'
+                }
+                return Response(error)
+
+        except Question.DoesNotExist:
+            error = {
+            'status': 'error',
+            'success_description': 'This question does not exists.'
+            }
+            return Response(error)
+
+        try:
+            selected_choice = Choice.objects.get(id=selected_choice_id, question=question)
+        except Choice.DoesNotExist:
+            error = {
+            'status': 'error',
+            'success_description': 'The answer must be one of the choices.'
+            }
+            return Response(error)
+
+        try:
+            quiz_result = QuizResult.objects.get(user=request.user, question=question, quiz=question.quiz)
+            quiz_result.selected_choice = selected_choice
+            quiz_result.save()
+        except QuizResult.DoesNotExist:
+            quiz_result = QuizResult.objects.create(user=request.user, question=question, quiz=question.quiz, selected_choice=selected_choice)
+
+        response = {
+        'status': 'success',
+        'success_description': 'Answer submitted successfully.'
+        }
+        return Response(response)
+
+class ContentQuizAnswer(APIView):
+
+    def put(self, request, course_id, content_id, question_id, format=None):
+
+        request_body = request.data
+        selected_choice_id = request_body['selected_choice_id']
+
+        course, found, error = utils.get_course(course_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        content, found, error = utils.get_content(content_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+        try:
+            question = Question.objects.get(id=question_id)
+
+            if content.quiz:
+                print(1)
+                if question not in content.quiz.questions.all():
+                    error = {
+                    'status': 'error',
+                    'success_description': 'This question does not exists.'
+                    }
+                    return Response(error)
+            else:
+                error = {
+                    'status': 'error',
+                    'message': 'Not Found!',
+                    'error_description': 'This content does not has any quizzes.'
+                }
+                return Response(error)
+
+        except Question.DoesNotExist:
+            error = {
+            'status': 'error',
+            'success_description': 'This question does not exists.'
+            }
+            return Response(error)
+
+        try:
+            selected_choice = Choice.objects.get(id=selected_choice_id, question=question)
+        except Choice.DoesNotExist:
+            error = {
+            'status': 'error',
+            'success_description': 'The answer must be one of the choices.'
+            }
+            return Response(error)
+
+        try:
+            quiz_result = QuizResult.objects.get(user=request.user, question=question, quiz=question.quiz)
+            quiz_result.selected_choice = selected_choice
+            quiz_result.save()
+        except QuizResult.DoesNotExist:
+            quiz_result = QuizResult.objects.create(user=request.user, question=question, quiz=question.quiz, selected_choice=selected_choice)
+
+        response = {
+        'status': 'success',
+        'success_description': 'Answer submitted successfully.'
+        }
+        return Response(response)
 
 class CourseAttachement(APIView):
 
