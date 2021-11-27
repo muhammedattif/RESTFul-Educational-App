@@ -6,6 +6,7 @@ from playlists.models import Playlist, Favorite, WatchHistory
 from courses.api.serializers import FullContentSerializer
 from courses.models import Content
 import courses.utils as utils
+import alteby.utils as general_utils
 from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 
@@ -43,7 +44,8 @@ class PlaylistList(APIView, PageNumberPagination):
         return Response(response, status=status.HTTP_409_CONFLICT)
 
 
-class PlaylistDetail(APIView, PageNumberPagination):
+class PlaylistContent(APIView):
+
     """
     List all playlist's details.
     """
@@ -62,13 +64,18 @@ class PlaylistDetail(APIView, PageNumberPagination):
             }
             return Response(response, status=status.HTTP_404_NOT_FOUND)
 
-
-class PlaylistContent(APIView):
     """
     Add or remove content from a playlist
     """
 
-    def put(self, request, playlist_id, content_id, format=None):
+    def put(self, request, playlist_id, format=None):
+
+        try:
+            request_body = request.data
+            content_id = request_body['content_id']
+        except Exception as e:
+            return Response(general_utils.errors['required_fields'], status=status.HTTP_400_BAD_REQUEST)
+
         content, found, error = utils.get_content(content_id)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
@@ -82,7 +89,7 @@ class PlaylistContent(APIView):
             serializer = PlaylistSerializer(playlist, many=False)
             return Response(serializer.data)
 
-        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
     def delete(self, request, playlist_id, content_id, format=None):
         playlist, found, error = self.get_playlist(request, playlist_id)
@@ -108,7 +115,9 @@ class PlaylistContent(APIView):
             return None, False, error
 
 
-class FavoriteList(APIView, PageNumberPagination):
+
+class FavoriteController(APIView):
+
     """
     List all content of favorites
     """
@@ -121,12 +130,18 @@ class FavoriteList(APIView, PageNumberPagination):
         return self.get_paginated_response(serializer.data)
 
 
-class FavoriteContent(APIView):
     """
     Add or delete content from favorite
     """
 
-    def put(self, request, content_id, format=None):
+    def put(self, request, format=None):
+        try:
+            request_body = request.data
+            content_id = request_body['content_id']
+        except Exception as e:
+            return Response(general_utils.errors['required_fields'], status=status.HTTP_400_BAD_REQUEST)
+
+
         content, found, error = utils.get_content(content_id)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
@@ -138,7 +153,7 @@ class FavoriteContent(APIView):
             serializer = FavoriteSerializer(favorites, many=False)
             return Response(serializer.data)
 
-        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
     def delete(self, request, content_id, format=None):
         content, found, error = utils.get_content(content_id)

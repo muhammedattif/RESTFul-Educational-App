@@ -11,6 +11,7 @@ from django.db.models import Q
 from functools import reduce
 import operator
 import courses.utils as utils
+import alteby.utils as general_utils
 from django.db import IntegrityError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
@@ -42,7 +43,7 @@ class CourseDetail(APIView):
             serializer = CourseSerializer(course, many=False)
             return Response(serializer.data)
 
-        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 class ContentDetail(APIView):
 
@@ -57,7 +58,7 @@ class ContentDetail(APIView):
             watch_history.add_content(content)
             return Response(serializer.data)
 
-        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 
 class ContentList(APIView, PageNumberPagination):
@@ -74,7 +75,7 @@ class ContentList(APIView, PageNumberPagination):
             return self.get_paginated_response(serializer.data)
 
 
-        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 class QuizDetail(APIView, PageNumberPagination):
     page_size = 1
@@ -99,7 +100,7 @@ class QuizDetail(APIView, PageNumberPagination):
                         'error_description': 'This content does not has any quizzes.'
                     }
             else:
-                response = utils.errors['access_denied']
+                response = general_utils.errors['access_denied']
 
             return Response(response, status=status.HTTP_404_NOT_FOUND)
 
@@ -123,7 +124,7 @@ class QuizDetail(APIView, PageNumberPagination):
                         'error_description': 'This course does not has any quizzes.'
                     }
             else:
-                response = utils.errors['access_denied']
+                response = general_utils.errors['access_denied']
 
             return Response(response, status=status.HTTP_403_FORBIDDEN)
 
@@ -141,7 +142,7 @@ class CourseAttachement(APIView):
             serializer = AttachementSerializer(attachments, many=True)
             return Response(serializer.data)
 
-        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 class ContentAttachement(APIView):
 
@@ -156,7 +157,7 @@ class ContentAttachement(APIView):
             serializer = AttachementSerializer(attachments, many=True)
             return Response(serializer.data)
 
-        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 class CourseComments(APIView):
     def get(self, request, course_id, format=None):
@@ -170,7 +171,7 @@ class CourseComments(APIView):
             serializer = CommentSerializer(comments, many=True)
             return Response(serializer.data)
 
-        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 
     def post(self, request, course_id, format=None):
@@ -185,7 +186,7 @@ class CourseComments(APIView):
             serializer = CommentSerializer(comment, many=False)
             return Response(serializer.data)
 
-        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 
 class ContentComments(APIView):
@@ -200,7 +201,7 @@ class ContentComments(APIView):
             serializer = CommentSerializer(comments, many=True)
             return Response(serializer.data)
 
-        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
     def post(self, request, course_id, content_id, format=None):
         content, found, error = utils.get_content(content_id, course_id=course_id)
@@ -213,7 +214,7 @@ class ContentComments(APIView):
             serializer = CommentSerializer(comment, many=False)
             return Response(serializer.data)
 
-        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 
 
@@ -251,7 +252,7 @@ class CourseFeedbacks(APIView, PageNumberPagination):
             serializer = FeedbackSerializer(feedback, many=False)
             return Response(serializer.data)
 
-        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
 
 
 class TrackCourseActivity(APIView):
@@ -270,4 +271,4 @@ class TrackCourseActivity(APIView):
             }
             return Response(response, status=status.HTTP_403_FORBIDDEN)
 
-        return Response(utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)

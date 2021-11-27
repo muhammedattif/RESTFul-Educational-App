@@ -365,11 +365,17 @@ Example:
 
 ### Add Content to a playlist
 
-**PUT /playlists/[playlist_id]/contents/[content_id]**
+**PUT /playlists/[playlist_id]**
 
 Example:
-> **PUT** http://example.gov/api/playlists/[playlist_id]/contents/[content_id]
+> **PUT** http://example.gov/api/playlists/[playlist_id]
 
+
+Request body:
+
+      {
+          "content_id": [content_id]
+      }
 ------------------------------
 
 ### Delete Content from a playlist
@@ -392,10 +398,16 @@ Example:
 
 ### Add Content to favorites
 
-**PUT /playlists/favorites/[content_id]**
+**PUT /playlists/favorites**
 
 Example:
-> **PUT** http://example.gov/api/playlists/favorites/[content_id]
+> **PUT** http://example.gov/api/playlists/favorites
+
+Request body:
+
+      {
+          "content_id": [content_id]
+      }
 
 ------------------------------
 
