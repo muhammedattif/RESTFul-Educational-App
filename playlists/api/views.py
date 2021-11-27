@@ -74,7 +74,7 @@ class PlaylistContent(APIView):
             request_body = request.data
             content_id = request_body['content_id']
         except Exception as e:
-            return Response(general_utils.errors['required_fields'], status=status.HTTP_400_BAD_REQUEST)
+            return Response(general_utils.error('required_fields'), status=status.HTTP_400_BAD_REQUEST)
 
         content, found, error = utils.get_content(content_id)
         if not found:
@@ -89,7 +89,7 @@ class PlaylistContent(APIView):
             serializer = PlaylistSerializer(playlist, many=False)
             return Response(serializer.data)
 
-        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
     def delete(self, request, playlist_id, content_id, format=None):
         playlist, found, error = self.get_playlist(request, playlist_id)
@@ -139,7 +139,7 @@ class FavoriteController(APIView):
             request_body = request.data
             content_id = request_body['content_id']
         except Exception as e:
-            return Response(general_utils.errors['required_fields'], status=status.HTTP_400_BAD_REQUEST)
+            return Response(general_utils.error('required_fields'), status=status.HTTP_400_BAD_REQUEST)
 
 
         content, found, error = utils.get_content(content_id)
@@ -153,7 +153,7 @@ class FavoriteController(APIView):
             serializer = FavoriteSerializer(favorites, many=False)
             return Response(serializer.data)
 
-        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
     def delete(self, request, content_id, format=None):
         content, found, error = utils.get_content(content_id)

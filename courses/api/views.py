@@ -43,7 +43,7 @@ class CourseDetail(APIView):
             serializer = CourseSerializer(course, many=False)
             return Response(serializer.data)
 
-        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
 class ContentDetail(APIView):
 
@@ -58,7 +58,7 @@ class ContentDetail(APIView):
             watch_history.add_content(content)
             return Response(serializer.data)
 
-        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
 
 class ContentList(APIView, PageNumberPagination):
@@ -75,7 +75,7 @@ class ContentList(APIView, PageNumberPagination):
             return self.get_paginated_response(serializer.data)
 
 
-        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
 class QuizDetail(APIView, PageNumberPagination):
     page_size = 1
@@ -92,19 +92,15 @@ class QuizDetail(APIView, PageNumberPagination):
                     quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
                     questions = quiz.questions.all()
                     questions = self.paginate_queryset(questions, request, view=self)
-                    serializer = QuestionSerializer(questions, many=False)
+                    serializer = QuestionSerializer(questions, many=True)
 
                     if self.page_size == 1:
                         QuizResult.objects.filter(user=request.user, quiz=quiz).delete()
                     return self.get_paginated_response(serializer.data)
                 else:
-                    response = {
-                        'status': 'error',
-                        'message': 'Not Found!',
-                        'error_description': 'This content does not has any quizzes.'
-                    }
+                    response = general_utils.error('quiz_not_found')
             else:
-                response = general_utils.errors['access_denied']
+                response = general_utils.error('access_denied')
 
             return Response(response, status=status.HTTP_404_NOT_FOUND)
 
@@ -127,13 +123,9 @@ class QuizDetail(APIView, PageNumberPagination):
 
                     return self.get_paginated_response(serializer.data)
                 else:
-                    response = {
-                        'status': 'error',
-                        'message': 'Not Found!',
-                        'error_description': 'This course does not has any quizzes.'
-                    }
+                    response = general_utils.error('quiz_not_found')
             else:
-                response = general_utils.errors['access_denied']
+                response = general_utils.error('access_denied')
 
             return Response(response, status=status.HTTP_403_FORBIDDEN)
 
@@ -154,34 +146,17 @@ class CourseQuizAnswer(APIView):
             if course.quiz:
 
                 if question not in course.quiz.questions.all():
-                    error = {
-                    'status': 'error',
-                    'success_description': 'This question does not exists.'
-                    }
-                    return Response(error)
+                    return Response(general_utils.error('question_not_found'), status=status.HTTP_404_NOT_FOUND)
             else:
-                error = {
-                    'status': 'error',
-                    'message': 'Not Found!',
-                    'error_description': 'This content does not has any quizzes.'
-                }
-                return Response(error)
+                return Response(general_utils.error('quiz_not_found'), status=status.HTTP_404_NOT_FOUND)
 
         except Question.DoesNotExist:
-            error = {
-            'status': 'error',
-            'success_description': 'This question does not exists.'
-            }
-            return Response(error)
+            return Response(general_utils.error('question_not_found'), status=status.HTTP_404_NOT_FOUND)
 
         try:
             selected_choice = Choice.objects.get(id=selected_choice_id, question=question)
         except Choice.DoesNotExist:
-            error = {
-            'status': 'error',
-            'success_description': 'The answer must be one of the choices.'
-            }
-            return Response(error)
+            return Response(general_utils.error('choice_not_found'), status=status.HTTP_400_BAD_REQUEST)
 
         try:
             quiz_result = QuizResult.objects.get(user=request.user, question=question, quiz=question.quiz)
@@ -214,36 +189,18 @@ class ContentQuizAnswer(APIView):
             question = Question.objects.get(id=question_id)
 
             if content.quiz:
-                print(1)
                 if question not in content.quiz.questions.all():
-                    error = {
-                    'status': 'error',
-                    'success_description': 'This question does not exists.'
-                    }
-                    return Response(error)
+                    return Response(general_utils.error('question_not_found'), status=status.HTTP_404_NOT_FOUND)
             else:
-                error = {
-                    'status': 'error',
-                    'message': 'Not Found!',
-                    'error_description': 'This content does not has any quizzes.'
-                }
-                return Response(error)
+                return Response(general_utils.error('quiz_not_found'), status=status.HTTP_404_NOT_FOUND)
 
         except Question.DoesNotExist:
-            error = {
-            'status': 'error',
-            'success_description': 'This question does not exists.'
-            }
-            return Response(error)
+            return Response(general_utils.error('question_not_found'), status=status.HTTP_404_NOT_FOUND)
 
         try:
             selected_choice = Choice.objects.get(id=selected_choice_id, question=question)
         except Choice.DoesNotExist:
-            error = {
-            'status': 'error',
-            'success_description': 'The answer must be one of the choices.'
-            }
-            return Response(error)
+            return Response(general_utils.error('choice_not_found'), status=status.HTTP_400_BAD_REQUEST)
 
         try:
             quiz_result = QuizResult.objects.get(user=request.user, question=question, quiz=question.quiz)
@@ -253,7 +210,8 @@ class ContentQuizAnswer(APIView):
             quiz_result = QuizResult.objects.create(user=request.user, question=question, quiz=question.quiz, selected_choice=selected_choice)
 
         response = {
-        'status': 'success',
+        'status': True,
+        'message': 'success',
         'success_description': 'Answer submitted successfully.'
         }
         return Response(response)
@@ -271,7 +229,7 @@ class CourseAttachement(APIView):
             serializer = AttachementSerializer(attachments, many=True)
             return Response(serializer.data)
 
-        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
 class ContentAttachement(APIView):
 
@@ -286,7 +244,7 @@ class ContentAttachement(APIView):
             serializer = AttachementSerializer(attachments, many=True)
             return Response(serializer.data)
 
-        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
 class CourseComments(APIView):
     def get(self, request, course_id, format=None):
@@ -300,7 +258,7 @@ class CourseComments(APIView):
             serializer = CommentSerializer(comments, many=True)
             return Response(serializer.data)
 
-        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
 
     def post(self, request, course_id, format=None):
@@ -315,7 +273,7 @@ class CourseComments(APIView):
             serializer = CommentSerializer(comment, many=False)
             return Response(serializer.data)
 
-        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
 
 class ContentComments(APIView):
@@ -330,7 +288,7 @@ class ContentComments(APIView):
             serializer = CommentSerializer(comments, many=True)
             return Response(serializer.data)
 
-        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
     def post(self, request, course_id, content_id, format=None):
         content, found, error = utils.get_content(content_id, course_id=course_id)
@@ -343,7 +301,7 @@ class ContentComments(APIView):
             serializer = CommentSerializer(comment, many=False)
             return Response(serializer.data)
 
-        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
 
 
@@ -381,7 +339,7 @@ class CourseFeedbacks(APIView, PageNumberPagination):
             serializer = FeedbackSerializer(feedback, many=False)
             return Response(serializer.data)
 
-        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
 
 class TrackCourseActivity(APIView):
@@ -400,4 +358,4 @@ class TrackCourseActivity(APIView):
             }
             return Response(response, status=status.HTTP_403_FORBIDDEN)
 
-        return Response(general_utils.errors['access_denied'], status=status.HTTP_403_FORBIDDEN)
+        return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)

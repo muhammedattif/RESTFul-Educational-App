@@ -11,9 +11,5 @@ class CoursesEnrollments(APIView):
             enrollments = request.user.courses_enrollments.all()
             serializer = CourseEnrollmentSerializer(enrollments, many=True)
             return Response(serializer.data)
-        response = {
-            'status': 'error',
-            'message': 'Access denied!',
-            'error_description': 'You don\'t have access to preview this page.'
-        }
+        response = general_utils.error('page_access_denied')
         return Response(response, status=status.HTTP_403_FORBIDDEN)
