@@ -308,6 +308,38 @@ Example:
 
 ------------------------------
 
+### Submit question answer for course's quiz
+
+**PUT /courses/[course_id]/quiz/[question_id]/answer**
+
+Example:
+> **PUT** http://example.gov/api/courses/[course_id]/quiz/[question_id]/answer
+
+Request body:
+
+      {
+          "selected_choice_id": [choice_id]
+      }
+
+------------------------------
+
+
+### Submit question answer for content's quiz
+
+**PUT /courses/[course_id]/contents/[content_id]/quiz/[question_id]/answer**
+
+Example:
+> **PUT** http://example.gov/api/courses/[course_id]/contents/[content_id]/quiz/[question_id]/answer
+
+Request body:
+
+      {
+          "selected_choice_id": [choice_id]
+      }
+
+------------------------------
+
+
 ### List Course's Attachments
 
 **GET /courses/[course_id]/attachments**
