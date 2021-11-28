@@ -340,6 +340,26 @@ Request body:
 ------------------------------
 
 
+### Get quiz result for Course
+
+**GET /courses/[course_id]/quiz/result**
+
+Example:
+> **GET** http://example.gov/api/courses/[course_id]/quiz/result
+
+------------------------------
+
+
+### Get quiz result for Content
+
+**GET /courses/[course_id]/contents/[content_id]/quiz/result**
+
+Example:
+> **GET** http://example.gov/api/courses/[course_id]/contents/[content_id]/quiz/result
+
+------------------------------
+
+
 ### List Course's Attachments
 
 **GET /courses/[course_id]/attachments**

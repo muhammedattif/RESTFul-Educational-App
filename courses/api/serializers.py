@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.fields import CurrentUserDefault
-from courses.models import Course, CourseActivity, Content, CoursePrivacy, ContentPrivacy, Category, Quiz, Question, Choice, Attachement, Comment, Feedback
+from courses.models import Course, CourseActivity, Content, CoursePrivacy, ContentPrivacy, Category, Quiz, QuizResult, Question, Choice, Attachement, Comment, Feedback
 
 class FeedbackSerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,6 +28,13 @@ class QuizSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quiz
         fields = ('id', 'name', 'description', 'questions')
+
+class QuizResultSerializer(serializers.ModelSerializer):
+    question = QuestionSerializer(many=False, read_only=True)
+    selected_choice = ChoiceSerializer(many=False, read_only=True)
+    class Meta:
+        model = QuizResult
+        fields = '__all__'
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:

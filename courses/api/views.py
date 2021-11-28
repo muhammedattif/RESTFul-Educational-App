@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from .serializers import CourseSerializer, DemoContentSerializer, FullContentSerializer, QuizSerializer, AttachementSerializer, CommentSerializer, FeedbackSerializer, QuestionSerializer
+from .serializers import CourseSerializer, DemoContentSerializer, FullContentSerializer, QuizSerializer, QuizResultSerializer, AttachementSerializer, CommentSerializer, FeedbackSerializer, QuestionSerializer
 from courses.models import Course, CourseActivity, Content, Comment, Feedback, Quiz, Question, Choice, QuizResult
 from playlists.models import WatchHistory
 from django.db.models import Q
@@ -76,6 +76,7 @@ class ContentList(APIView, PageNumberPagination):
 
 
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
+
 
 class QuizDetail(APIView, PageNumberPagination):
     page_size = 1
@@ -163,7 +164,7 @@ class CourseQuizAnswer(APIView):
             quiz_result.selected_choice = selected_choice
             quiz_result.save()
         except QuizResult.DoesNotExist:
-            quiz_result = QuizResult.objects.create(user=request.user, question=question, quiz=question.quiz, selected_choice=selected_choice)
+            QuizResult.objects.create(user=request.user, question=question, quiz=question.quiz, selected_choice=selected_choice)
 
         response = {
         'status': 'success',
@@ -207,7 +208,7 @@ class ContentQuizAnswer(APIView):
             quiz_result.selected_choice = selected_choice
             quiz_result.save()
         except QuizResult.DoesNotExist:
-            quiz_result = QuizResult.objects.create(user=request.user, question=question, quiz=question.quiz, selected_choice=selected_choice)
+            QuizResult.objects.create(user=request.user, question=question, quiz=question.quiz, selected_choice=selected_choice)
 
         response = {
         'status': True,
@@ -216,6 +217,35 @@ class ContentQuizAnswer(APIView):
         }
         return Response(response)
 
+class CourseQuizResult(APIView):
+    
+    def get(self, request, course_id):
+        
+        course, found, error = utils.get_course(course_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+        quiz = course.quiz
+        quiz_answers = QuizResult.objects.filter(user=request.user, quiz=quiz)
+        serializer = QuizResultSerializer(quiz_answers, many=True)
+        return Response(serializer.data)
+
+
+class ContentQuizResult(APIView):
+
+    def get(self, request, course_id, content_id):
+        course, found, error = utils.get_course(course_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        content, found, error = utils.get_content(content_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        quiz = content.quiz
+        quiz_answers = QuizResult.objects.filter(user=request.user, quiz=quiz)
+        serializer = QuizResultSerializer(quiz_answers, many=True)
+        return Response(serializer.data)
+    
 class CourseAttachement(APIView):
 
     def get(self, request, course_id, format=None):
