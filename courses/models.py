@@ -8,8 +8,7 @@ from categories.models import Category
 UserModel = settings.AUTH_USER_MODEL
 
 
-####### Quizes
-
+####### Quizzes section
 class Quiz(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField()
@@ -63,6 +62,7 @@ class QuizAttempt(models.Model):
     def __str__(self):
         return f'{self.user}-{self.quiz}'
 
+####### Course Section
 class Course(models.Model):
 
     title = models.CharField(max_length=100)
@@ -86,7 +86,8 @@ class Course(models.Model):
         else:
             return user in self.privacy.shared_with.all()
 
-######### Course Content
+
+######### Course Content section
 class Content(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="content")
     title = models.CharField(max_length=100)
@@ -127,8 +128,8 @@ class CourseActivity(models.Model):
     def __str__(self):
           return f'{self.user.email}-{self.course.title}-{self.content.title}'
 
-#### Comments and feedback
 
+#### Comments and feedback section
 class CourseCommentsManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(content=None, status='published')
@@ -162,6 +163,7 @@ class Comment(models.Model):
     def __str__(self):
         return f'{self.user.email}-{self.comment_body}'
 
+
 class Feedback(models.Model):
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name="feedbacks")
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="feedbacks")
@@ -186,8 +188,7 @@ class Feedback(models.Model):
           return f'{self.user.email}-{self.course.title}'
 
 
-### requests
-
+### User's Requests section
 class CorrectInfo(models.Model):
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
@@ -210,7 +211,7 @@ class Report(models.Model):
           return f'{self.user.email}-{self.course.title}-{self.content.title}'
 
 
-## Privacy
+## Privacy section
 class Privacy(models.Model):
 
     PRIVACY_CHOICES = Choices(
@@ -248,9 +249,7 @@ class ContentPrivacy(Privacy):
     def __str__(self):
           return self.content.title
 
-# Attachements
-
-
+# Attachments section
 class Attachement(models.Model):
     file = models.FileField(upload_to='file')
 
