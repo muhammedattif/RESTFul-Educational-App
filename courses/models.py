@@ -91,9 +91,9 @@ class Course(models.Model):
 class Content(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="content")
     title = models.CharField(max_length=100)
-    video_content = models.CharField(blank=True, max_length=100)
-    audio_content = models.CharField(blank=True, max_length=100)
-    text_content = models.CharField(blank=True, max_length=100)
+    video_content = models.FileField(upload_to='video', blank=True, null=True)
+    audio_content = models.FileField(upload_to='audio', blank=True, null=True)
+    text_content = models.TextField(blank=True, null=True, max_length=100)
     order = models.IntegerField()
     quiz = models.OneToOneField(Quiz, on_delete=models.CASCADE, blank=True, null=True)
 
@@ -251,7 +251,7 @@ class ContentPrivacy(Privacy):
 
 # Attachments section
 class Attachement(models.Model):
-    file = models.FileField(upload_to='file')
+    file = models.FileField(upload_to='attachements')
 
 
 class CourseAttachement(Attachement):
