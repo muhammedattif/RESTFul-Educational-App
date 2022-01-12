@@ -14,7 +14,7 @@ class CategoryList(APIView, PageNumberPagination):
     def get(self, request, format=None):
         categories = Category.objects.all()
         categories = self.paginate_queryset(categories, request, view=self)
-        serializer = CategorySerializer(categories, many=True)
+        serializer = CategorySerializer(categories, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -23,5 +23,5 @@ class CategoryFilter(APIView, PageNumberPagination):
     def get(self, request, category_id, format=None):
         courses = Category.objects.get(id=category_id).course_set.all()
         courses = self.paginate_queryset(courses, request, view=self)
-        serializer = CourseSerializer(courses, many=True)
+        serializer = CourseSerializer(courses, many=True, context={'request': request})
         return Response(serializer.data)

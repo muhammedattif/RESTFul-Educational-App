@@ -18,7 +18,7 @@ class PlaylistList(APIView, PageNumberPagination):
     def get(self, request, format=None):
         playlists = Playlist.objects.prefetch_related('content').filter(owner=request.user)
         playlists = self.paginate_queryset(playlists, request, view=self)
-        serializer = PlaylistSerializer(playlists, many=True)
+        serializer = PlaylistSerializer(playlists, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
 
     def post(self, request, format=None):
@@ -27,7 +27,7 @@ class PlaylistList(APIView, PageNumberPagination):
     def create(self, request):
         playlist_data = request.data
         playlist_data['owner'] = request.user.id
-        serializer = PlaylistSerializer(data=playlist_data)
+        serializer = PlaylistSerializer(data=playlist_data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             response = {
@@ -54,7 +54,7 @@ class PlaylistContent(APIView):
         try:
             content = Playlist.objects.get(id=playlist_id, owner=request.user).content.prefetch_related('privacy__shared_with')
             content = self.paginate_queryset(content, request, view=self)
-            serializer = FullContentSerializer(content, many=True)
+            serializer = FullContentSerializer(content, many=True, context={'request': request})
             return self.get_paginated_response(serializer.data)
         except Playlist.DoesNotExist:
             response = {
@@ -86,7 +86,7 @@ class PlaylistContent(APIView):
                 return Response(error, status=status.HTTP_404_NOT_FOUND)
 
             playlist.add(content)
-            serializer = PlaylistSerializer(playlist, many=False)
+            serializer = PlaylistSerializer(playlist, many=False, context={'request': request})
             return Response(serializer.data)
 
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
@@ -101,7 +101,7 @@ class PlaylistContent(APIView):
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
         playlist.remove(content)
-        serializer = PlaylistSerializer(playlist, many=False)
+        serializer = PlaylistSerializer(playlist, many=False, context={'request': request})
         return Response(serializer.data)
 
     def get_playlist(self, request, playlist_id):
@@ -126,7 +126,7 @@ class FavoriteController(APIView):
         favorites, created = Favorite.objects.get_or_create(owner=request.user)
         content = favorites.content.prefetch_related('privacy__shared_with')
         content = self.paginate_queryset(content, request, view=self)
-        serializer = FullContentSerializer(content, many=True)
+        serializer = FullContentSerializer(content, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
 
 
@@ -150,7 +150,7 @@ class FavoriteController(APIView):
         if access_granted:
             favorites = self.get_favorite_playlist(request)
             favorites.add(content)
-            serializer = FavoriteSerializer(favorites, many=False)
+            serializer = FavoriteSerializer(favorites, many=False, context={'request': request})
             return Response(serializer.data)
 
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
@@ -162,7 +162,7 @@ class FavoriteController(APIView):
 
         favorites = self.get_favorite_playlist(request)
         favorites.remove(content)
-        serializer = FavoriteSerializer(favorites, many=False)
+        serializer = FavoriteSerializer(favorites, many=False, context={'request': request})
         return Response(serializer.data)
 
 
@@ -177,5 +177,5 @@ class WatchHistoryList(APIView, PageNumberPagination):
         user_watch_history, created = WatchHistory.objects.get_or_create(user=request.user)
         user_watch_history_contents = user_watch_history.contents.prefetch_related('privacy__shared_with')
         user_watch_history_contents = self.paginate_queryset(user_watch_history_contents, request, view=self)
-        serializer = FullContentSerializer(user_watch_history_contents, many=True)
+        serializer = FullContentSerializer(user_watch_history_contents, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)

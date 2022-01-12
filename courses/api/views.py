@@ -40,7 +40,7 @@ class CourseDetail(APIView):
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
         if utils.allowed_to_access_course(request.user, course):
-            serializer = CourseSerializer(course, many=False)
+            serializer = CourseSerializer(course, many=False, context={'request': request})
             return Response(serializer.data)
 
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
@@ -53,7 +53,7 @@ class ContentDetail(APIView):
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
         if utils.allowed_to_access_content(request.user, content):
-            serializer = FullContentSerializer(content, many=False)
+            serializer = FullContentSerializer(content, many=False, context={'request': request})
             watch_history, created = WatchHistory.objects.get_or_create(user=request.user)
             watch_history.add_content(content)
             return Response(serializer.data)
@@ -93,7 +93,7 @@ class QuizDetail(APIView, PageNumberPagination):
                     quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
                     questions = quiz.questions.all()
                     questions = self.paginate_queryset(questions, request, view=self)
-                    serializer = QuestionSerializer(questions, many=True)
+                    serializer = QuestionSerializer(questions, many=True, context={'request': request})
 
                     if self.page_size == 1:
                         QuizResult.objects.filter(user=request.user, quiz=quiz).delete()
@@ -117,7 +117,7 @@ class QuizDetail(APIView, PageNumberPagination):
                     quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
                     questions = quiz.questions.all()
                     questions = self.paginate_queryset(questions, request, view=self)
-                    serializer = QuestionSerializer(questions, many=True)
+                    serializer = QuestionSerializer(questions, many=True, context={'request': request})
 
                     if self.page_size == 1:
                         QuizResult.objects.filter(user=request.user, quiz=quiz).delete()
@@ -218,15 +218,15 @@ class ContentQuizAnswer(APIView):
         return Response(response)
 
 class CourseQuizResult(APIView):
-    
+
     def get(self, request, course_id):
-        
+
         course, found, error = utils.get_course(course_id)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
         quiz = course.quiz
         quiz_answers = QuizResult.objects.filter(user=request.user, quiz=quiz)
-        serializer = QuizResultSerializer(quiz_answers, many=True)
+        serializer = QuizResultSerializer(quiz_answers, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -243,9 +243,9 @@ class ContentQuizResult(APIView):
 
         quiz = content.quiz
         quiz_answers = QuizResult.objects.filter(user=request.user, quiz=quiz)
-        serializer = QuizResultSerializer(quiz_answers, many=True)
+        serializer = QuizResultSerializer(quiz_answers, many=True, context={'request': request})
         return Response(serializer.data)
-    
+
 class CourseAttachement(APIView):
 
     def get(self, request, course_id, format=None):
@@ -256,7 +256,7 @@ class CourseAttachement(APIView):
 
         if utils.allowed_to_access_course(request.user, course):
             attachments = course.attachments.all()
-            serializer = AttachementSerializer(attachments, many=True)
+            serializer = AttachementSerializer(attachments, many=True, context={'request': request})
             return Response(serializer.data)
 
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
@@ -271,7 +271,7 @@ class ContentAttachement(APIView):
 
         if utils.allowed_to_access_content(request.user, content):
             attachments = content.attachments.all()
-            serializer = AttachementSerializer(attachments, many=True)
+            serializer = AttachementSerializer(attachments, many=True, context={'request': request})
             return Response(serializer.data)
 
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
@@ -285,7 +285,7 @@ class CourseComments(APIView):
 
         if utils.allowed_to_access_course(request.user, course):
             comments = course.comments(manager='course_comments').all()
-            serializer = CommentSerializer(comments, many=True)
+            serializer = CommentSerializer(comments, many=True, context={'request': request})
             return Response(serializer.data)
 
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
@@ -300,7 +300,7 @@ class CourseComments(APIView):
         if utils.allowed_to_access_course(request.user, course):
             comment_body = request.data['comment_body']
             comment = Comment.objects.create(user=request.user, course=course, comment_body=comment_body)
-            serializer = CommentSerializer(comment, many=False)
+            serializer = CommentSerializer(comment, many=False, context={'request': request})
             return Response(serializer.data)
 
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
@@ -315,7 +315,7 @@ class ContentComments(APIView):
 
         if utils.allowed_to_access_content(request.user, content):
             comments = content.comments(manager='content_comments').all()
-            serializer = CommentSerializer(comments, many=True)
+            serializer = CommentSerializer(comments, many=True, context={'request': request})
             return Response(serializer.data)
 
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
@@ -328,7 +328,7 @@ class ContentComments(APIView):
         if utils.allowed_to_access_content(request.user, content):
             comment_body = request.data['comment_body']
             comment = Comment.objects.create(user=request.user, course=content.course, content=content, comment_body=comment_body)
-            serializer = CommentSerializer(comment, many=False)
+            serializer = CommentSerializer(comment, many=False, context={'request': request})
             return Response(serializer.data)
 
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
@@ -344,7 +344,7 @@ class CourseFeedbacks(APIView, PageNumberPagination):
 
         feedbacks = course.feedbacks.all()
         feedbacks = self.paginate_queryset(feedbacks, request, view=self)
-        serializer = FeedbackSerializer(feedbacks, many=True)
+        serializer = FeedbackSerializer(feedbacks, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
 
 
@@ -366,7 +366,7 @@ class CourseFeedbacks(APIView, PageNumberPagination):
                 }
                 return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
-            serializer = FeedbackSerializer(feedback, many=False)
+            serializer = FeedbackSerializer(feedback, many=False, context={'request': request})
             return Response(serializer.data)
 
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
