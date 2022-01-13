@@ -45,7 +45,7 @@ class SignIn(APIView):
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 class SignUp(APIView):
-
+    permission_classes = ()
     def post(self, request, format=True):
         serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
@@ -59,4 +59,5 @@ class SignUp(APIView):
             }
         else:
             response = serializer.errors
-        return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        return Response(response, status=status.HTTP_201_CREATED)
