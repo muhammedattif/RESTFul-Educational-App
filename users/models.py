@@ -73,13 +73,13 @@ class Student(models.Model):
         ('GR', 'Graduate'),
     ]
     ACADEMIC_YEAR = [
-        (1, 'FIRST'),
-        (2, 'SECOND'),
-        (3, 'THIRD'),
-        (4, 'FOURTH'),
-        (5, 'FIFTH'),
-        (6, 'SIXTH'),
-        (7, 'SEVENTH'),
+        (1, 'First'),
+        (2, 'Second'),
+        (3, 'Third'),
+        (4, 'Fourth'),
+        (5, 'Fifth'),
+        (6, 'Sixth'),
+        (7, 'Seventh'),
     ]
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True, related_name="student_info")
     major = models.CharField(blank=True, null=True, max_length=40)

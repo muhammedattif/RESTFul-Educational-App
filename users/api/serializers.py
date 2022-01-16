@@ -1,5 +1,5 @@
 from django.contrib.auth import authenticate
-from users.models import User
+from users.models import User, Student
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
@@ -104,3 +104,19 @@ def validateEmail( email ):
         return True
     except ValidationError:
         return False
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'email', 'username', 'first_name', 'last_name', 'date_joined', 'last_login')
+
+
+class StudentSerializer(serializers.ModelSerializer):
+    user = UserSerializer(many=False, read_only=True)
+    year_in_school = serializers.CharField(source='get_year_in_school_display')
+    academic_year = serializers.CharField(source='get_academic_year_display')
+
+
+    class Meta:
+        model = Student
+        fields = '__all__'

@@ -10,7 +10,7 @@ def get_course(course_id, prefetch_related=None, select_related=None):
             query =  query.select_related(*select_related)
         return query.get(id=course_id), True, None
     except Course.DoesNotExist:
-        return None, False, general_utils.errors['course_not_found']
+        return None, False, general_utils.error('course_not_found')
 
 def get_content(content_id, course_id=None, prefetch_related=None, select_related=None):
     try:
@@ -26,7 +26,7 @@ def get_content(content_id, course_id=None, prefetch_related=None, select_relate
 
         return query, True, None
     except Content.DoesNotExist:
-        return None, False, general_utils.errors['content_not_found']
+        return None, False, general_utils.error('content_not_found')
 
 
 def allowed_to_access_content(user, content):
