@@ -65,7 +65,7 @@ class SignUp(APIView):
 
 class ProfileDetail(APIView):
 
-    def get(self, request, username):
+    def get(self, request):
         student = Student.objects.get(user=request.user)
         serializer = StudentSerializer(student, many=False)
         context = serializer.data
