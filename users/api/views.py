@@ -3,15 +3,16 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
+from rest_framework.generics import RetrieveAPIView
 from rest_framework import renderers
 from rest_framework import parsers
 from rest_framework.authtoken import views as auth_views
 from rest_framework.compat import coreapi, coreschema
 from rest_framework.schemas import ManualSchema
 from django.http import JsonResponse
-from .serializers import AuthTokenSerializer, SignUpSerializer
+from .serializers import AuthTokenSerializer, SignUpSerializer, StudentSerializer
 from django.core.exceptions import ValidationError
-
+from users.models import Student
 
 class SignIn(APIView):
     throttle_classes = ()
@@ -61,3 +62,11 @@ class SignUp(APIView):
             response = serializer.errors
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
         return Response(response, status=status.HTTP_201_CREATED)
+
+class ProfileDetail(APIView):
+
+    def get(self, request, id):
+        student = Student.objects.get(user=request.user)
+        serializer = StudentSerializer(student, many=False)
+        context = serializer.data
+        return Response(serializer.data)
