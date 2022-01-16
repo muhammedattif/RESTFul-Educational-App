@@ -6,7 +6,7 @@ app_name = 'users'
 urlpatterns = [
     # users APIs routes
     path('<int:user_id>/enrollments', CoursesEnrollments.as_view(), name="courses_enrollments"),
-    path('<str:username>/profile', ProfileDetail.as_view(), name="profile"),
+    path('profile/', ProfileDetail.as_view(), name="profile"),
 
     # Authentication Routes
     path('signin', SignIn.as_view(), name="signin"),
