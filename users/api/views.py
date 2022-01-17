@@ -13,6 +13,8 @@ from django.http import JsonResponse
 from .serializers import AuthTokenSerializer, SignUpSerializer, StudentSerializer
 from django.core.exceptions import ValidationError
 from users.models import Student
+from courses.api.serializers import CourseSerializer
+from courses.models import Course
 
 class SignIn(APIView):
     throttle_classes = ()
@@ -35,8 +37,15 @@ class SignIn(APIView):
             content = {
                 'token': token.key,
                 'user_id': user.pk,
-                'email': user.email
+                'email': user.email,
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'year_in_school': user.student_info.year_in_school,
+                'academic_year': user.student_info.academic_year,
+                'major': user.student_info.major
             }
+
             return Response(content)
         except:
             response = {}
@@ -56,7 +65,13 @@ class SignUp(APIView):
             response = {
                 'token': token.key,
                 'user_id': user.pk,
-                'email': user.email
+                'email': user.email,
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'year_in_school': user.student_info.year_in_school,
+                'academic_year': user.student_info.academic_year,
+                'major': user.student_info.major
             }
         else:
             response = serializer.errors
@@ -68,5 +83,14 @@ class ProfileDetail(APIView):
     def get(self, request):
         student = Student.objects.get(user=request.user)
         serializer = StudentSerializer(student, many=False)
+        context = serializer.data
+        return Response(serializer.data)
+
+class EnrolledCourses(APIView):
+
+    def get(self, request, user_id):
+        courses_ids = request.user.enrollments.values_list('course', flat=True)
+        courses = Course.objects.filter(id__in=courses_ids)
+        serializer = CourseSerializer(courses, many=True)
         context = serializer.data
         return Response(serializer.data)
