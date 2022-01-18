@@ -77,7 +77,7 @@ class CourseSerializer(serializers.ModelSerializer):
     privacy = CoursePrivacySerializer(many=False, read_only=True)
     class Meta:
         model = Course
-        fields = ('id', 'title', 'description', 'date_created', 'categories', 'number_of_lectures', 'privacy', 'quiz')
+        fields = ('id', 'title', 'description', 'date_created', 'categories', 'price', 'number_of_lectures', 'privacy', 'quiz')
         depth = 1
 
     def get_content_count(self, course):
