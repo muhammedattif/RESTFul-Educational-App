@@ -31,6 +31,14 @@ class CourseList(ListAPIView):
             return Course.objects.prefetch_related('content__quiz__questions__choices', 'content__privacy', 'categories', 'privacy__shared_with')
 
 
+class FeaturedCoursesList(ListAPIView):
+    serializer_class = CourseSerializer
+
+    def get_queryset(self):
+        return Course.objects.prefetch_related('content__quiz__questions__choices', 'content__privacy', 'categories', 'privacy__shared_with').filter(featured=True)
+
+
+
 class CourseDetail(APIView):
 
     def get(self, request, course_id, format=None):

@@ -63,6 +63,7 @@ This is an Educational application. This app is developed using Python/Django ba
 - List Course Detail
 - List Course's Content
 - List content Detail
+- List Enrolled courses
 - Track Course Activity (Watched or not)
 - Add Feedback to an enrolled Course
 - List Course Feedbacks
@@ -159,6 +160,26 @@ Request body:
       }
 ------------------------------
 
+## Users
+
+### List all enrolled courses
+
+**GET /users/[user_id]/enrolled-courses**
+
+Example:
+> **GET** http://example.gov/api/users/[user_id]/enrolled-courses
+
+------------------------------
+
+### Get User Profile
+
+**GET /users/[user_id]/profile**
+
+Example:
+> **GET** http://example.gov/api/users/[user_id]/profile
+
+------------------------------
+
 
 ## Courses
 
@@ -171,6 +192,14 @@ Example:
 
 ------------------------------
 
+### List of all featured courses
+
+**GET /courses/featured**
+
+Example:
+> **GET** http://example.gov/api/courses/featured
+
+------------------------------
 
 ### List Course Detail
 

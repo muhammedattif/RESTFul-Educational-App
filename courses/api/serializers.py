@@ -70,14 +70,18 @@ class DemoContentSerializer(serializers.ModelSerializer):
 class FullContentSerializer(DemoContentSerializer):
     class Meta:
         model = Content
-        fields = ('id', 'title', 'video_content', 'audio_content', 'text_content', 'order', 'privacy')
+        fields = ('id', 'title', 'video', 'audio', 'text', 'order', 'privacy')
 
 class CourseSerializer(serializers.ModelSerializer):
+    number_of_lectures = serializers.SerializerMethodField('get_content_count')
     privacy = CoursePrivacySerializer(many=False, read_only=True)
     class Meta:
         model = Course
-        fields = ('id', 'title', 'description', 'date_created', 'categories', 'privacy', 'quiz')
+        fields = ('id', 'title', 'description', 'date_created', 'categories', 'number_of_lectures', 'privacy', 'quiz')
         depth = 1
+
+    def get_content_count(self, course):
+        return course.content.count()
 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:

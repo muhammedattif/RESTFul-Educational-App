@@ -90,7 +90,7 @@ class Student(models.Model):
         return self.user.email
 
     def is_enrolled(self, course):
-        return course.id in self.user.courses_enrollments.values_list('course', flat=True)
+        return course.id in self.user.enrollments.values_list('course', flat=True)
 
 class Teacher(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True, related_name="teacher_info")

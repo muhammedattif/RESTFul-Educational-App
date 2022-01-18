@@ -67,9 +67,11 @@ class Course(models.Model):
 
     title = models.CharField(max_length=100)
     description = models.TextField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
     categories = models.ManyToManyField(Category, blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
     quiz = models.OneToOneField(Quiz, on_delete=models.CASCADE, blank=True, null=True)
+    featured = models.BooleanField(default=False)
 
     def __str__(self):
           return self.title
@@ -91,9 +93,10 @@ class Course(models.Model):
 class Content(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="content")
     title = models.CharField(max_length=100)
-    video_content = models.FileField(upload_to='video', blank=True, null=True)
-    audio_content = models.FileField(upload_to='audio', blank=True, null=True)
-    text_content = models.TextField(blank=True, null=True, max_length=100)
+    description = models.TextField()
+    video = models.FileField(upload_to='video', blank=True, null=True)
+    audio = models.FileField(upload_to='audio', blank=True, null=True)
+    text = models.TextField(blank=True, null=True, max_length=100)
     order = models.IntegerField()
     quiz = models.OneToOneField(Quiz, on_delete=models.CASCADE, blank=True, null=True)
 
