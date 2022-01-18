@@ -70,7 +70,7 @@ class DemoContentSerializer(serializers.ModelSerializer):
 class FullContentSerializer(DemoContentSerializer):
     class Meta:
         model = Content
-        fields = ('id', 'title', 'video_content', 'audio_content', 'text_content', 'order', 'privacy')
+        fields = ('id', 'title', 'video', 'audio', 'text', 'order', 'privacy')
 
 class CourseSerializer(serializers.ModelSerializer):
     number_of_lectures = serializers.SerializerMethodField('get_content_count')

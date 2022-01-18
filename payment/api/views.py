@@ -8,7 +8,7 @@ class CoursesEnrollments(APIView):
 
     def get(self, request, user_id, format=None):
         if request.user.id == user_id:
-            enrollments = request.user.courses_enrollments.all()
+            enrollments = request.user.enrollments.all()
             serializer = CourseEnrollmentSerializer(enrollments, many=True)
             return Response(serializer.data)
         response = general_utils.error('page_access_denied')
