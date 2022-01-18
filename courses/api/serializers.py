@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework.fields import CurrentUserDefault
 from courses.models import Course, CourseActivity, Content, CoursePrivacy, ContentPrivacy, Category, Quiz, QuizResult, Question, Choice, Attachement, Comment, Feedback
+from categories.api.serializers import CategorySerializer
 
 class FeedbackSerializer(serializers.ModelSerializer):
     class Meta:
@@ -36,10 +37,6 @@ class QuizResultSerializer(serializers.ModelSerializer):
         model = QuizResult
         fields = '__all__'
 
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = '__all__'
 
 class CoursePrivacySerializer(serializers.ModelSerializer):
     class Meta:
@@ -75,10 +72,10 @@ class FullContentSerializer(DemoContentSerializer):
 class CourseSerializer(serializers.ModelSerializer):
     number_of_lectures = serializers.SerializerMethodField('get_content_count')
     privacy = CoursePrivacySerializer(many=False, read_only=True)
+    categories = CategorySerializer(many=True, read_only=True)
     class Meta:
         model = Course
         fields = ('id', 'title', 'description', 'date_created', 'categories', 'price', 'number_of_lectures', 'privacy', 'quiz')
-        depth = 1
 
     def get_content_count(self, course):
         return course.content.count()
