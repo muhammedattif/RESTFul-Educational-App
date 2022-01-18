@@ -28,9 +28,9 @@ AUTHENTICATION_BACKENDS = (
 SECRET_KEY = 'django-insecure-pzxjj03z6a7+2xf-186h!7xy-mcq)hz3in-xz-06#a!1b)1^83'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['emtyaz-advisor.herokuapp.com']
+ALLOWED_HOSTS = []
 
 INTERNAL_IPS = [
     '127.0.0.1',
