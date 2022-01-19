@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from .serializers import CourseSerializer, DemoContentSerializer, FullContentSerializer, QuizSerializer, QuizResultSerializer, AttachementSerializer, CommentSerializer, FeedbackSerializer, QuestionSerializer
+from .serializers import CourseSerializer, DemoContentSerializer, FullContentSerializer, QuizSerializer, QuizResultSerializer, CourseAttachementSerializer, ContentAttachementSerializer, CommentSerializer, FeedbackSerializer, QuestionSerializer
 from courses.models import Course, CourseActivity, Content, Comment, Feedback, Quiz, Question, Choice, QuizResult
 from playlists.models import WatchHistory
 from django.db.models import Q
@@ -264,7 +264,8 @@ class CourseAttachement(APIView):
 
         if utils.allowed_to_access_course(request.user, course):
             attachments = course.attachments.all()
-            serializer = AttachementSerializer(attachments, many=True, context={'request': request})
+
+            serializer = CourseAttachementSerializer(attachments, many=True, context={'request': request})
             return Response(serializer.data)
 
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
@@ -279,7 +280,7 @@ class ContentAttachement(APIView):
 
         if utils.allowed_to_access_content(request.user, content):
             attachments = content.attachments.all()
-            serializer = AttachementSerializer(attachments, many=True, context={'request': request})
+            serializer = ContentAttachementSerializer(attachments, many=True, context={'request': request})
             return Response(serializer.data)
 
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)

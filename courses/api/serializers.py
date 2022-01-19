@@ -8,10 +8,25 @@ class FeedbackSerializer(serializers.ModelSerializer):
         model = Feedback
         fields = '__all__'
 
-class AttachementSerializer(serializers.ModelSerializer):
+class CourseAttachementSerializer(serializers.ModelSerializer):
+    course_id = serializers.SerializerMethodField('get_course_id')
+
     class Meta:
         model = Attachement
         fields = '__all__'
+
+    def get_course_id(self, attachment):
+        return attachment.course_id
+
+class ContentAttachementSerializer(serializers.ModelSerializer):
+    content_id = serializers.SerializerMethodField('get_content_id')
+
+    class Meta:
+        model = Attachement
+        fields = '__all__'
+
+    def get_content_id(self, attachment):
+        return attachment.content_id
 
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -67,7 +82,10 @@ class DemoContentSerializer(serializers.ModelSerializer):
 class FullContentSerializer(DemoContentSerializer):
     class Meta:
         model = Content
-        fields = ('id', 'title', 'video', 'audio', 'text', 'order', 'privacy')
+        fields = ('id', 'course_id', 'title', 'video', 'audio', 'text', 'order', 'privacy')
+
+    def get_course_id(self, content):
+        return content.course.id
 
 class CourseSerializer(serializers.ModelSerializer):
     number_of_lectures = serializers.SerializerMethodField('get_content_count')
