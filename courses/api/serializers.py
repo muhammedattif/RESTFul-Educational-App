@@ -8,25 +8,10 @@ class FeedbackSerializer(serializers.ModelSerializer):
         model = Feedback
         fields = '__all__'
 
-class CourseAttachementSerializer(serializers.ModelSerializer):
-    course_id = serializers.SerializerMethodField('get_course_id')
-
+class AttachementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attachement
         fields = '__all__'
-
-    def get_course_id(self, attachment):
-        return attachment.course_id
-
-class ContentAttachementSerializer(serializers.ModelSerializer):
-    content_id = serializers.SerializerMethodField('get_content_id')
-
-    class Meta:
-        model = Attachement
-        fields = '__all__'
-
-    def get_content_id(self, attachment):
-        return attachment.content_id
 
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:

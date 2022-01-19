@@ -254,6 +254,7 @@ class ContentPrivacy(Privacy):
 
 # Attachments section
 class Attachement(models.Model):
+    title = models.CharField(max_length=100)
     file = models.FileField(upload_to='attachements')
 
 
