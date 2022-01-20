@@ -22,7 +22,7 @@ class Quiz(models.Model):
 class Question(models.Model):
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
     question_title = models.TextField()
-    question_extra_info = models.TextField()
+    question_extra_info = models.TextField(blank=True, null=True)
 
     def __str__(self):
           return self.question_title
@@ -47,7 +47,6 @@ class QuizResult(models.Model):
         return f'{self.user}-{self.quiz}'
 
     def save(self, *args, **kwargs):
-        print(self.selected_choice.is_correct)
         if self.selected_choice.is_correct:
             self.is_correct = True
         else:

@@ -14,7 +14,7 @@ urlpatterns = [
   path('<int:course_id>/comments', CourseComments.as_view(), name='course_comments'),
   path('<int:course_id>/quiz', QuizDetail.as_view(), name='course_quiz'),
   path('<int:course_id>/quiz/result', CourseQuizResult.as_view(), name='course_quiz_result'),
-  path('<int:course_id>/quiz/questions/<int:question_id>/answer', CourseQuizAnswer.as_view(), name='course_quiz_answer'),
+  path('<int:course_id>/quiz/answer', CourseQuizAnswer.as_view(), name='course_quiz_answer'),
   path('<int:course_id>/attachements', CourseAttachement.as_view(), name='course_attachment'),
 
   # Content API
@@ -24,7 +24,7 @@ urlpatterns = [
   path('<int:course_id>/contents/<int:content_id>/comments', ContentComments.as_view(), name='content_comments'),
   path('<int:course_id>/contents/<int:content_id>/quiz', QuizDetail.as_view(), name='content_quiz'),
   path('<int:course_id>/contents/<int:content_id>/quiz/result', ContentQuizResult.as_view(), name='content_quiz_result'),
-  path('<int:course_id>/contents/<int:content_id>/quiz/questions/<int:question_id>/answer', ContentQuizAnswer.as_view(), name='content_quiz_answer'),
+  path('<int:course_id>/contents/<int:content_id>/quiz/answer', ContentQuizAnswer.as_view(), name='content_quiz_answer'),
   path('<int:course_id>/contents/<int:content_id>/attachements', ContentAttachement.as_view(), name='content_attachment'),
 
 

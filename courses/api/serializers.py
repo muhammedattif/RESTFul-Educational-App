@@ -16,7 +16,7 @@ class AttachementSerializer(serializers.ModelSerializer):
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
-        fields = '__all__'
+        fields = ('id', 'choice', 'is_correct')
 
 class QuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, read_only=True)
@@ -35,7 +35,7 @@ class QuizResultSerializer(serializers.ModelSerializer):
     selected_choice = ChoiceSerializer(many=False, read_only=True)
     class Meta:
         model = QuizResult
-        fields = '__all__'
+        fields = ('id', 'question', 'selected_choice', 'is_correct')
 
 
 class CoursePrivacySerializer(serializers.ModelSerializer):

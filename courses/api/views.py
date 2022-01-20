@@ -14,7 +14,7 @@ import courses.utils as utils
 import alteby.utils as general_utils
 from django.db import IntegrityError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
-
+from django.db import transaction
 
 class CourseList(ListAPIView):
     serializer_class = CourseSerializer
@@ -86,10 +86,15 @@ class ContentList(APIView, PageNumberPagination):
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
 
-class QuizDetail(APIView, PageNumberPagination):
-    page_size = 1
+class QuizDetail(APIView):
 
     def get(self, request, course_id=None, content_id=None, format=None):
+
+        request_params = self.request.GET
+        retake = False
+        if 'retake' in request_params:
+            retake =  request_params.get('retake')
+
         if content_id:
             content, found, error = utils.get_content(content_id, course_id=course_id, select_related=['quiz'])
             if not found:
@@ -100,12 +105,13 @@ class QuizDetail(APIView, PageNumberPagination):
                     quiz_id = content.quiz.id
                     quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
                     questions = quiz.questions.all()
-                    questions = self.paginate_queryset(questions, request, view=self)
                     serializer = QuestionSerializer(questions, many=True, context={'request': request})
 
-                    if self.page_size == 1:
+                    # Delete previous result of this quiz
+                    if retake:
                         QuizResult.objects.filter(user=request.user, quiz=quiz).delete()
-                    return self.get_paginated_response(serializer.data)
+
+                    return Response(serializer.data)
                 else:
                     response = general_utils.error('quiz_not_found')
             else:
@@ -124,13 +130,13 @@ class QuizDetail(APIView, PageNumberPagination):
                     quiz_id = course.quiz.id
                     quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
                     questions = quiz.questions.all()
-                    questions = self.paginate_queryset(questions, request, view=self)
                     serializer = QuestionSerializer(questions, many=True, context={'request': request})
 
-                    if self.page_size == 1:
+                    # Delete previous result of this quiz
+                    if retake:
                         QuizResult.objects.filter(user=request.user, quiz=quiz).delete()
 
-                    return self.get_paginated_response(serializer.data)
+                    return Response(serializer.data)
                 else:
                     response = general_utils.error('quiz_not_found')
             else:
@@ -141,51 +147,53 @@ class QuizDetail(APIView, PageNumberPagination):
 
 class CourseQuizAnswer(APIView):
 
-    def put(self, request, course_id, question_id, format=None):
+    @transaction.atomic
+    def put(self, request, course_id, format=None):
 
         request_body = request.data
-        selected_choice_id = request_body['selected_choice_id']
+        if 'quiz_answers' not in request_body:
+            return Response(general_utils.error('required_fields'), status=status.HTTP_400_BAD_REQUEST)
+
+        quiz_answers = request_body['quiz_answers']
 
         course, found, error = utils.get_course(course_id)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        try:
-            question = Question.objects.get(id=question_id)
-            if course.quiz:
+        quiz = course.quiz
+        if not quiz:
+            return Response(general_utils.error('quiz_not_found'), status=status.HTTP_404_NOT_FOUND)
 
-                if question not in course.quiz.questions.all():
-                    return Response(general_utils.error('question_not_found'), status=status.HTTP_404_NOT_FOUND)
-            else:
-                return Response(general_utils.error('quiz_not_found'), status=status.HTTP_404_NOT_FOUND)
+        answers_objs = []
+        for answer in quiz_answers:
+            user = request.user
+            try:
+                question = Question.objects.get(id=answer['question_id'])
+                selected_choice = Choice.objects.get(id=answer['selected_choice_id'], question=question)
+            except Question.DoesNotExist:
+                return Response(general_utils.error('question_not_found'), status=status.HTTP_404_NOT_FOUND)
+            except Choice.DoesNotExist:
+                return Response(general_utils.error('choice_not_found'), status=status.HTTP_404_NOT_FOUND)
 
-        except Question.DoesNotExist:
-            return Response(general_utils.error('question_not_found'), status=status.HTTP_404_NOT_FOUND)
+            answer = QuizResult(user=request.user, quiz=quiz, question=question, selected_choice=selected_choice, is_correct=selected_choice.is_correct)
+            answers_objs.append(answer)
 
-        try:
-            selected_choice = Choice.objects.get(id=selected_choice_id, question=question)
-        except Choice.DoesNotExist:
-            return Response(general_utils.error('choice_not_found'), status=status.HTTP_400_BAD_REQUEST)
+        if not answers_objs:
+            return Response(general_utils.error('empty_quiz_answers'), status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            quiz_result = QuizResult.objects.get(user=request.user, question=question, quiz=question.quiz)
-            quiz_result.selected_choice = selected_choice
-            quiz_result.save()
-        except QuizResult.DoesNotExist:
-            QuizResult.objects.create(user=request.user, question=question, quiz=question.quiz, selected_choice=selected_choice)
-
-        response = {
-        'status': 'success',
-        'success_description': 'Answer submitted successfully.'
-        }
-        return Response(response)
+        QuizResult.objects.bulk_create(answers_objs)
+        return Response(general_utils.success('quiz_answer_submitted'), status=status.HTTP_201_CREATED)
 
 class ContentQuizAnswer(APIView):
 
-    def put(self, request, course_id, content_id, question_id, format=None):
+    @transaction.atomic
+    def put(self, request, course_id, content_id, format=None):
 
         request_body = request.data
-        selected_choice_id = request_body['selected_choice_id']
+        if 'quiz_answers' not in request_body:
+            return Response(general_utils.error('required_fields'), status=status.HTTP_400_BAD_REQUEST)
+
+        quiz_answers = request_body['quiz_answers']
 
         course, found, error = utils.get_course(course_id)
         if not found:
@@ -194,36 +202,30 @@ class ContentQuizAnswer(APIView):
         content, found, error = utils.get_content(content_id)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
-        try:
-            question = Question.objects.get(id=question_id)
 
-            if content.quiz:
-                if question not in content.quiz.questions.all():
-                    return Response(general_utils.error('question_not_found'), status=status.HTTP_404_NOT_FOUND)
-            else:
-                return Response(general_utils.error('quiz_not_found'), status=status.HTTP_404_NOT_FOUND)
+        quiz = content.quiz
+        if not quiz:
+            return Response(general_utils.error('quiz_not_found'), status=status.HTTP_404_NOT_FOUND)
 
-        except Question.DoesNotExist:
-            return Response(general_utils.error('question_not_found'), status=status.HTTP_404_NOT_FOUND)
+        answers_objs = []
+        for answer in quiz_answers:
+            user = request.user
+            try:
+                question = Question.objects.get(id=answer['question_id'])
+                selected_choice = Choice.objects.get(id=answer['selected_choice_id'], question=question)
+            except Question.DoesNotExist:
+                return Response(general_utils.error('question_not_found'), status=status.HTTP_404_NOT_FOUND)
+            except Choice.DoesNotExist:
+                return Response(general_utils.error('choice_not_found'), status=status.HTTP_404_NOT_FOUND)
 
-        try:
-            selected_choice = Choice.objects.get(id=selected_choice_id, question=question)
-        except Choice.DoesNotExist:
-            return Response(general_utils.error('choice_not_found'), status=status.HTTP_400_BAD_REQUEST)
+            answer = QuizResult(user=request.user, quiz=quiz, question=question, selected_choice=selected_choice, is_correct=selected_choice.is_correct)
+            answers_objs.append(answer)
 
-        try:
-            quiz_result = QuizResult.objects.get(user=request.user, question=question, quiz=question.quiz)
-            quiz_result.selected_choice = selected_choice
-            quiz_result.save()
-        except QuizResult.DoesNotExist:
-            QuizResult.objects.create(user=request.user, question=question, quiz=question.quiz, selected_choice=selected_choice)
+        if not answers_objs:
+            return Response(general_utils.error('empty_quiz_answers'), status=status.HTTP_400_BAD_REQUEST)
 
-        response = {
-        'status': True,
-        'message': 'success',
-        'success_description': 'Answer submitted successfully.'
-        }
-        return Response(response)
+        QuizResult.objects.bulk_create(answers_objs)
+        return Response(general_utils.success('quiz_answer_submitted'), status=status.HTTP_201_CREATED)
 
 class CourseQuizResult(APIView):
 
@@ -233,6 +235,7 @@ class CourseQuizResult(APIView):
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
         quiz = course.quiz
+        # Must select distinct, but it is not supported by SQLite
         quiz_answers = QuizResult.objects.filter(user=request.user, quiz=quiz)
         serializer = QuizResultSerializer(quiz_answers, many=True, context={'request': request})
         return Response(serializer.data)

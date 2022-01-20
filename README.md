@@ -321,50 +321,67 @@ Example:
 
 ### Get Course's Quiz
 
-**GET /courses/[course_id]/quiz**
+**GET /courses/[course_id]/quiz?retake=false**
 
 Example:
-> **GET** http://example.gov/api/courses/[course_id]/quiz
+> **GET** http://example.gov/api/courses/[course_id]/quiz?retake=false
 
 ------------------------------
 
 ### Get Content's Quiz
 
-**GET /courses/[course_id]/contents/[content_id]/quiz**
+**GET /courses/[course_id]/contents/[content_id]/quiz?retake=false**
 
 Example:
-> **GET** http://example.gov/api/courses/[course_id]/contents/[content_id]/quiz
+> **GET** http://example.gov/api/courses/[course_id]/contents/[content_id]/quiz?retake=false
 
 ------------------------------
 
 ### Submit question answer for course's quiz
 
-**PUT /courses/[course_id]/quiz/[question_id]/answer**
+**PUT /courses/[course_id]/quiz/answer**
 
 Example:
-> **PUT** http://example.gov/api/courses/[course_id]/quiz/[question_id]/answer
+> **PUT** http://example.gov/api/courses/[course_id]/quiz/answer
 
 Request body:
-
-      {
-          "selected_choice_id": [choice_id]
-      }
+    {
+        "quiz_answers": [
+            {
+                "question_id": 1,
+                "selected_choice_id": 4
+            },
+            {
+                "question_id": 2,
+                "selected_choice_id": 55
+            }
+        ]
+    }
 
 ------------------------------
 
 
 ### Submit question answer for content's quiz
 
-**PUT /courses/[course_id]/contents/[content_id]/quiz/[question_id]/answer**
+**PUT /courses/[course_id]/contents/[content_id]/quiz/answer**
 
 Example:
-> **PUT** http://example.gov/api/courses/[course_id]/contents/[content_id]/quiz/[question_id]/answer
+> **PUT** http://example.gov/api/courses/[course_id]/contents/[content_id]/quiz/answer
 
 Request body:
 
-      {
-          "selected_choice_id": [choice_id]
-      }
+    {
+        "quiz_answers": [
+            {
+                "question_id": 1,
+                "selected_choice_id": 4
+            },
+            {
+                "question_id": 2,
+                "selected_choice_id": 55
+            }
+        ]
+    }
 
 ------------------------------
 
