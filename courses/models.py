@@ -1,6 +1,8 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models import Q, Sum
+from django.db.models import Q
+from django.db.models.functions import Cast
+
 from django.conf import settings
 from model_utils import Choices
 from categories.models import Category
@@ -102,7 +104,7 @@ class Content(models.Model):
     video = models.FileField(upload_to='video', blank=True, null=True)
     audio = models.FileField(upload_to='audio', blank=True, null=True)
     text = models.TextField(blank=True, null=True, max_length=100)
-    duration = models.IntegerField(blank=True)
+    duration = models.FloatField(blank=True, default=0)
     order = models.IntegerField()
     quiz = models.OneToOneField(Quiz, on_delete=models.CASCADE, blank=True, null=True)
 
