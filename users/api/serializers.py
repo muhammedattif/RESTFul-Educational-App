@@ -115,8 +115,6 @@ class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer(many=False, read_only=True)
     year_in_school = serializers.CharField(source='get_year_in_school_display')
     academic_year = serializers.CharField(source='get_academic_year_display')
-
-
     class Meta:
         model = Student
         fields = '__all__'
