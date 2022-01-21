@@ -79,7 +79,7 @@ class ContentConfig(NestedModelAdmin):
     list_display = ('course', 'title')
 
     fieldsets = (
-        ("Content Information", {'fields': ('title', 'description', 'course', 'video', 'audio', 'text', 'order', 'quiz')}),
+        ("Content Information", {'fields': ('title', 'description', 'course', 'video', 'audio', 'text', 'duration', 'order', 'quiz')}),
     )
 
     inlines = [ContentPrivacyInline, ContentAttachementsInline]
