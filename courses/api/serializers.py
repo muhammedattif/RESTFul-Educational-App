@@ -86,7 +86,7 @@ class CourseSerializer(serializers.ModelSerializer):
 
     def get_progress(self, course):
         user = self.context.get('request', None).user
-        content_viewed_count = user.course_activity.filter(course=course).count(distinct=True)
+        content_viewed_count = user.course_activity.filter(course=course).distinct('course', 'content').count()
 
         content_count = course.get_content_count()
         if not content_count:
