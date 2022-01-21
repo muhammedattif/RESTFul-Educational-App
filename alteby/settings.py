@@ -185,5 +185,5 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 5
 }
 
-# import django_heroku
-# django_heroku.settings(locals())
+import django_heroku
+django_heroku.settings(locals())
