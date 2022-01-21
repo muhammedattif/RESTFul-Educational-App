@@ -16,6 +16,7 @@ def success(success_key):
 error_messages = {
     'content_not_found': 'This content cannot be found',
     'course_not_found': 'This course cannot be found',
+    'category_not_found': 'This Category cannot be found',
     'access_denied': 'You don\'t have access to this resourse!, enroll this course to see its content.',
     'required_fields': 'Some fields are required.',
     'quiz_not_found': 'This content does not has any quizzes.',

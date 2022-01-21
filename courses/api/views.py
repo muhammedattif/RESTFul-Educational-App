@@ -16,26 +16,30 @@ from django.db import IntegrityError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from django.db import transaction
 
+from django.db.models import Prefetch
+
 class CourseList(ListAPIView):
     serializer_class = CourseSerializer
 
     def get_queryset(self):
         request_params = self.request.GET
+        queryset = Course.objects.all()
         if 'q' in request_params:
             search_query = request_params.get('q').split(" ")
             query = reduce(operator.or_, (Q(title__icontains=search_term) | Q(description__icontains=search_term) for search_term in search_query))
-            return Course.objects\
-                .prefetch_related('content__quiz__questions__choices', 'content__privacy', 'categories', 'privacy__shared_with')\
-                .filter(query)
+            serializer = self.get_serializer()
+            return serializer.get_related_queries(queryset.filter(query))
         else:
-            return Course.objects.prefetch_related('content__quiz__questions__choices', 'content__privacy', 'categories', 'privacy__shared_with')
-
+            serializer = self.get_serializer()
+            return serializer.get_related_queries(queryset)
 
 class FeaturedCoursesList(ListAPIView):
     serializer_class = CourseSerializer
 
     def get_queryset(self):
-        return Course.objects.prefetch_related('content__quiz__questions__choices', 'content__privacy', 'categories', 'privacy__shared_with').filter(featured=True)
+        queryset = Course.objects.all()
+        serializer = self.get_serializer()
+        return serializer.get_related_queries(queryset)
 
 
 
@@ -102,7 +106,7 @@ class QuizDetail(APIView):
 
             if utils.allowed_to_access_content(request.user, content):
                 if content.quiz:
-                    serializer = QuizSerializer(questions, many=False, context={'request': request})
+                    serializer = QuizSerializer(content.quiz, many=False, context={'request': request})
 
                     # Delete previous result of this quiz
                     if retake:
@@ -118,13 +122,12 @@ class QuizDetail(APIView):
 
         else:
 
-            course, found, error = utils.get_course(course_id, select_related=['quiz'])
+            course, found, error = utils.get_course(course_id, select_related=['quiz'], prefetch_related=['quiz__questions__choices'])
             if not found:
                 return Response(error, status=status.HTTP_404_NOT_FOUND)
 
             if utils.allowed_to_access_course(request.user, course):
                 if course.quiz:
-
                     serializer = QuizSerializer(course.quiz, many=False, context={'request': request})
 
                     # Delete previous result of this quiz
@@ -231,7 +234,7 @@ class CourseQuizResult(APIView):
             return Response(error, status=status.HTTP_404_NOT_FOUND)
         quiz = course.quiz
         # Must select distinct, but it is not supported by SQLite
-        quiz_answers = QuizResult.objects.filter(user=request.user, quiz=quiz)
+        quiz_answers = QuizResult.objects.select_related('quiz', 'question', 'selected_choice').prefetch_related('question__choices').filter(user=request.user, quiz=quiz)
         serializer = QuizResultSerializer(quiz_answers, many=True, context={'request': request})
         return Response(serializer.data)
 

@@ -74,19 +74,36 @@ class FullContentSerializer(DemoContentSerializer):
     def get_course_id(self, content):
         return content.course.id
 
-class CourseSerializer(serializers.ModelSerializer):
+class QuerySerializerMixin(object):
+    PREFETCH_FIELDS = [] # Here is for M2M fields
+    RELATED_FIELDS = [] # Here is for ForeignKeys
+
+    @classmethod
+    def get_related_queries(cls, queryset):
+        # This method we will use in our ViewSet
+        # for modify queryset, based on RELATED_FIELDS and PREFETCH_FIELDS
+        if cls.RELATED_FIELDS:
+            queryset = queryset.select_related(*cls.RELATED_FIELDS)
+        if cls.PREFETCH_FIELDS:
+            queryset = queryset.prefetch_related(*cls.PREFETCH_FIELDS)
+        return queryset
+
+class CourseSerializer(serializers.ModelSerializer, QuerySerializerMixin):
     progress = serializers.SerializerMethodField('get_progress')
     duration = serializers.SerializerMethodField('get_duration')
     number_of_lectures = serializers.IntegerField(source='get_content_count')
     privacy = CoursePrivacySerializer(many=False, read_only=True)
     categories = CategorySerializer(many=True, read_only=True)
+
+    PREFETCH_FIELDS = ['content', 'activity', 'categories', 'categories__course_set', 'privacy__shared_with']
+
     class Meta:
         model = Course
         fields = ('id', 'title', 'description', 'date_created', 'categories', 'price', 'privacy', 'quiz', 'number_of_lectures', 'duration', 'progress')
 
     def get_progress(self, course):
         user = self.context.get('request', None).user
-        content_viewed_count = user.course_activity.filter(course=course).distinct('course', 'content').count()
+        content_viewed_count = course.activity.filter(user=user).count()
 
         content_count = course.get_content_count()
         if not content_count:

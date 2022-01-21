@@ -5,6 +5,7 @@ from rest_framework.pagination import PageNumberPagination
 from .serializers import CategorySerializer
 from courses.api.serializers import CourseSerializer
 from categories.models import Category
+import alteby.utils as general_utils
 
 
 class CategoryList(APIView, PageNumberPagination):
@@ -12,7 +13,7 @@ class CategoryList(APIView, PageNumberPagination):
     List all categories.
     """
     def get(self, request, format=None):
-        categories = Category.objects.all()
+        categories = Category.objects.all().prefetch_related('course_set')
         categories = self.paginate_queryset(categories, request, view=self)
         serializer = CategorySerializer(categories, many=True, context={'request': request})
         return Response(serializer.data)
@@ -21,7 +22,11 @@ class CategoryList(APIView, PageNumberPagination):
 class CategoryFilter(APIView, PageNumberPagination):
 
     def get(self, request, category_id, format=None):
-        courses = Category.objects.get(id=category_id).course_set.all()
+        try:
+            courses = Category.objects.prefetch_related('course_set', 'course_set__content').get(id=category_id).course_set.all()
+        except Category.DoesNotExist:
+            return Response(general_utils.error('category_not_found'), status=status.HTTP_404_NOT_FOUND)
+
         courses = self.paginate_queryset(courses, request, view=self)
         serializer = CourseSerializer(courses, many=True, context={'request': request})
         return Response(serializer.data)
