@@ -1,6 +1,6 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models import Q
+from django.db.models import Q, Sum, FloatField
 from django.conf import settings
 from model_utils import Choices
 from categories.models import Category
@@ -90,6 +90,13 @@ class Course(models.Model):
         else:
             return user in self.privacy.shared_with.all()
 
+    def get_content_count(self):
+        return self.content.count()
+
+    def get_duration(self):
+        duration = self.content.aggregate(sum=Sum('duration', output_field=FloatField()))['sum']
+        return duration
+
 
 ######### Course Content section
 class Content(models.Model):
@@ -99,7 +106,7 @@ class Content(models.Model):
     video = models.FileField(upload_to='video', blank=True, null=True)
     audio = models.FileField(upload_to='audio', blank=True, null=True)
     text = models.TextField(blank=True, null=True, max_length=100)
-    duration = models.CharField(blank=True, max_length=300)
+    duration = models.FloatField(blank=True, default=0)
     order = models.IntegerField()
     quiz = models.OneToOneField(Quiz, on_delete=models.CASCADE, blank=True, null=True)
 

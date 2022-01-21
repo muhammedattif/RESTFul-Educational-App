@@ -59,7 +59,7 @@ class DemoContentSerializer(serializers.ModelSerializer):
     privacy = ContentPrivacySerializer(many=False, read_only=True)
     class Meta:
         model = Content
-        fields = ('id', 'title', 'order', 'course', 'privacy', 'viewed')
+        fields = ('id', 'title', 'order', 'course', 'privacy', 'viewed', 'duration')
 
     def content_viewed(self, content):
         user = self.context.get('request', None).user
@@ -68,28 +68,26 @@ class DemoContentSerializer(serializers.ModelSerializer):
 class FullContentSerializer(DemoContentSerializer):
     class Meta:
         model = Content
-        fields = ('id', 'course_id', 'title', 'video', 'audio', 'text', 'order', 'privacy')
+        fields = ('id', 'course_id', 'title', 'video', 'audio', 'text', 'duration', 'order', 'privacy')
 
     def get_course_id(self, content):
         return content.course.id
 
 class CourseSerializer(serializers.ModelSerializer):
     progress = serializers.SerializerMethodField('get_progress')
-    number_of_lectures = serializers.SerializerMethodField('get_content_count')
+    duration = serializers.FloatField(source='get_duration')
+    number_of_lectures = serializers.IntegerField(source='get_content_count')
     privacy = CoursePrivacySerializer(many=False, read_only=True)
     categories = CategorySerializer(many=True, read_only=True)
     class Meta:
         model = Course
-        fields = ('id', 'title', 'description', 'date_created', 'categories', 'price', 'privacy', 'quiz', 'number_of_lectures', 'progress')
-
-    def get_content_count(self, course):
-        return course.content.count()
+        fields = ('id', 'title', 'description', 'date_created', 'categories', 'price', 'privacy', 'quiz', 'number_of_lectures', 'duration', 'progress')
 
     def get_progress(self, course):
         user = self.context.get('request', None).user
         content_viewed_count = user.course_activity.filter(course=course).count()
 
-        content_count = self.get_content_count(course)
+        content_count = course.get_content_count()
         if not content_count:
             return 0.0
         return content_viewed_count/content_count*100
