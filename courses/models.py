@@ -96,7 +96,7 @@ class Course(models.Model):
         return self.content.count()
 
     def get_duration(self):
-        duration = self.content.all().aggregate(sum=Sum('order'))['sum']
+        duration = self.content.all().aggregate(sum=Sum('duration'))['sum']
         return duration
 
 
