@@ -26,9 +26,10 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 class QuizSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, read_only=True)
+    number_of_questions = serializers.CharField(source='get_questions_count')
     class Meta:
         model = Quiz
-        fields = ('id', 'name', 'description', 'questions')
+        fields = ('id', 'name', 'description', 'number_of_questions', 'questions')
 
 class QuizResultSerializer(serializers.ModelSerializer):
     question = QuestionSerializer(many=False, read_only=True)
@@ -73,15 +74,26 @@ class FullContentSerializer(DemoContentSerializer):
         return content.course.id
 
 class CourseSerializer(serializers.ModelSerializer):
+    progress = serializers.SerializerMethodField('get_progress')
     number_of_lectures = serializers.SerializerMethodField('get_content_count')
     privacy = CoursePrivacySerializer(many=False, read_only=True)
     categories = CategorySerializer(many=True, read_only=True)
     class Meta:
         model = Course
-        fields = ('id', 'title', 'description', 'date_created', 'categories', 'price', 'number_of_lectures', 'privacy', 'quiz')
+        fields = ('id', 'title', 'description', 'date_created', 'categories', 'price', 'privacy', 'quiz', 'number_of_lectures', 'progress')
 
     def get_content_count(self, course):
         return course.content.count()
+
+    def get_progress(self, course):
+        user = self.context.get('request', None).user
+        content_viewed_count = user.course_activity.filter(course=course).count()
+
+        content_count = self.get_content_count(course)
+        if not content_count:
+            return 0.0
+        return content_viewed_count/content_count*100
+
 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:

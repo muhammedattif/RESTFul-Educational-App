@@ -19,6 +19,9 @@ class Quiz(models.Model):
     def __str__(self):
           return self.name
 
+    def get_questions_count(self):
+        return self.questions.count()
+
 class Question(models.Model):
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
     question_title = models.TextField()
@@ -120,7 +123,7 @@ class Content(models.Model):
 
 ###### Course Activity Tracking
 class CourseActivity(models.Model):
-    user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
+    user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='course_activity')
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     content = models.ForeignKey(Content, on_delete=models.CASCADE)
 
