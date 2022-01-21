@@ -75,7 +75,7 @@ class FullContentSerializer(DemoContentSerializer):
 
 class CourseSerializer(serializers.ModelSerializer):
     progress = serializers.SerializerMethodField('get_progress')
-    duration = serializers.IntegerField(source='get_duration')
+    duration = int(serializers.IntegerField(source='get_duration'))
     number_of_lectures = serializers.IntegerField(source='get_content_count')
     privacy = CoursePrivacySerializer(many=False, read_only=True)
     categories = CategorySerializer(many=True, read_only=True)
