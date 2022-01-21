@@ -96,7 +96,7 @@ class Course(models.Model):
         return self.content.count()
 
     def get_duration(self):
-        duration = self.content.all().aggregate(sum=Sum('duration'))['sum']
+        duration = self.content.aggregate(sum=Sum('duration'))['sum']
         return duration
 
 
@@ -108,7 +108,7 @@ class Content(models.Model):
     video = models.FileField(upload_to='video', blank=True, null=True)
     audio = models.FileField(upload_to='audio', blank=True, null=True)
     text = models.TextField(blank=True, null=True, max_length=100)
-    duration = models.IntegerField(default=0)
+    duration = models.IntegerField(blank=True)
     order = models.IntegerField()
     quiz = models.OneToOneField(Quiz, on_delete=models.CASCADE, blank=True, null=True)
 
