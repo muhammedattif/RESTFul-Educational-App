@@ -94,7 +94,7 @@ class CourseSerializer(serializers.ModelSerializer):
         return content_viewed_count/content_count*100
 
     def get_duration(self, course):
-        duration = sum(course.content.values_list('duration', flat=True))
+        duration = course.content.aggregate(sum=Sum('duration'))['sum']
         return duration
 
 
