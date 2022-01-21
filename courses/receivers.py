@@ -24,10 +24,10 @@ def calculate_duration(sender, instance=None, created=False, **kwargs):
     if created:
         if instance.video:
             video = VideoFileClip(instance.video.path)
-            instance.duration = int(video.duration) # this will return the length of the video in seconds
+            instance.duration = video.duration # this will return the length of the video in seconds
         elif instance.audio:
             audio = AudioFileClip(instance.audio.path)
-            instance.duration = int(audio.duration)  # this will return the length of the video in seconds
+            instance.duration = audio.duration  # this will return the length of the video in seconds
         else:
             instance.duration = 0
         instance.save()
