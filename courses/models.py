@@ -94,7 +94,7 @@ class Course(models.Model):
         return self.content.count()
 
     def get_duration(self):
-        duration = self.content.aggregate(sum=Sum('duration', output_field=FloatField()))['sum']
+        duration = self.content.aggregate(sum=Sum('duration')['sum']
         return duration
 
 
