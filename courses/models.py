@@ -1,6 +1,8 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
 from django.db.models import Q, Sum, FloatField
+from django.db.models.functions import Cast
+
 from django.conf import settings
 from model_utils import Choices
 from categories.models import Category
@@ -94,7 +96,7 @@ class Course(models.Model):
         return self.content.count()
 
     def get_duration(self):
-        duration = self.content.aggregate(sum=Sum('duration'))['sum']
+        duration = self.content.annotate(sum=Cast('duration', output_field=FloatField())).aggregate(sum=Sum('duration'))['sum']
         return duration
 
 
