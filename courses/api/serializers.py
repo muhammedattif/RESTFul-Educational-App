@@ -2,6 +2,7 @@ from rest_framework import serializers
 from rest_framework.fields import CurrentUserDefault
 from courses.models import Course, CourseActivity, Content, CoursePrivacy, ContentPrivacy, Category, Quiz, QuizResult, Question, Choice, Attachement, Comment, Feedback
 from categories.api.serializers import CategorySerializer
+from django.db.models import Sum
 
 class FeedbackSerializer(serializers.ModelSerializer):
     class Meta:
@@ -75,7 +76,7 @@ class FullContentSerializer(DemoContentSerializer):
 
 class CourseSerializer(serializers.ModelSerializer):
     progress = serializers.SerializerMethodField('get_progress')
-    duration = int(serializers.IntegerField(source='get_duration'))
+    duration = serializers.SerializerMethodField('get_duration')
     number_of_lectures = serializers.IntegerField(source='get_content_count')
     privacy = CoursePrivacySerializer(many=False, read_only=True)
     categories = CategorySerializer(many=True, read_only=True)
@@ -91,6 +92,10 @@ class CourseSerializer(serializers.ModelSerializer):
         if not content_count:
             return 0.0
         return content_viewed_count/content_count*100
+
+    def get_duration(self, course):
+        duration = course.content.aggregate(sum=Sum('duration'))['sum']
+        return duration
 
 
 class CommentSerializer(serializers.ModelSerializer):

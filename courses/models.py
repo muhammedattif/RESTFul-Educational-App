@@ -1,8 +1,6 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models import Q, Sum, DecimalField
-from django.db.models.functions import Cast
-
+from django.db.models import Q, Sum
 from django.conf import settings
 from model_utils import Choices
 from categories.models import Category
@@ -94,10 +92,6 @@ class Course(models.Model):
 
     def get_content_count(self):
         return self.content.count()
-
-    def get_duration(self):
-        duration = self.content.aggregate(sum=Sum('duration'))['sum']
-        return duration
 
 
 ######### Course Content section
