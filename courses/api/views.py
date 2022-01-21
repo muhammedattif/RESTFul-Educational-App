@@ -91,9 +91,9 @@ class QuizDetail(APIView):
     def get(self, request, course_id=None, content_id=None, format=None):
 
         request_params = self.request.GET
-        retake = False
+        retake = 0
         if 'retake' in request_params:
-            retake =  request_params.get('retake')
+            retake = int(request_params.get('retake'))
 
         if content_id:
             content, found, error = utils.get_content(content_id, course_id=course_id, select_related=['quiz'])
@@ -102,14 +102,11 @@ class QuizDetail(APIView):
 
             if utils.allowed_to_access_content(request.user, content):
                 if content.quiz:
-                    quiz_id = content.quiz.id
-                    quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
-                    questions = quiz.questions.all()
-                    serializer = QuestionSerializer(questions, many=True, context={'request': request})
+                    serializer = QuizSerializer(questions, many=False, context={'request': request})
 
                     # Delete previous result of this quiz
                     if retake:
-                        QuizResult.objects.filter(user=request.user, quiz=quiz).delete()
+                        QuizResult.objects.filter(user=request.user, quiz=content.quiz).delete()
 
                     return Response(serializer.data)
                 else:
@@ -127,14 +124,12 @@ class QuizDetail(APIView):
 
             if utils.allowed_to_access_course(request.user, course):
                 if course.quiz:
-                    quiz_id = course.quiz.id
-                    quiz = Quiz.objects.prefetch_related('questions__choices').get(id=quiz_id)
-                    questions = quiz.questions.all()
-                    serializer = QuestionSerializer(questions, many=True, context={'request': request})
+
+                    serializer = QuizSerializer(course.quiz, many=False, context={'request': request})
 
                     # Delete previous result of this quiz
                     if retake:
-                        QuizResult.objects.filter(user=request.user, quiz=quiz).delete()
+                        QuizResult.objects.filter(user=request.user, quiz=course.quiz).delete()
 
                     return Response(serializer.data)
                 else:

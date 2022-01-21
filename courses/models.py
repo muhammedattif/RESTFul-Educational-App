@@ -19,6 +19,9 @@ class Quiz(models.Model):
     def __str__(self):
           return self.name
 
+    def get_questions_count(self):
+        return self.questions.count()
+
 class Question(models.Model):
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
     question_title = models.TextField()
@@ -96,6 +99,7 @@ class Content(models.Model):
     video = models.FileField(upload_to='video', blank=True, null=True)
     audio = models.FileField(upload_to='audio', blank=True, null=True)
     text = models.TextField(blank=True, null=True, max_length=100)
+    duration = models.CharField(blank=True, max_length=300)
     order = models.IntegerField()
     quiz = models.OneToOneField(Quiz, on_delete=models.CASCADE, blank=True, null=True)
 
@@ -120,7 +124,7 @@ class Content(models.Model):
 
 ###### Course Activity Tracking
 class CourseActivity(models.Model):
-    user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
+    user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='course_activity')
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     content = models.ForeignKey(Content, on_delete=models.CASCADE)
 

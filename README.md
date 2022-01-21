@@ -321,19 +321,19 @@ Example:
 
 ### Get Course's Quiz
 
-**GET /courses/[course_id]/quiz?retake=false**
+**GET /courses/[course_id]/quiz?retake=1**
 
 Example:
-> **GET** http://example.gov/api/courses/[course_id]/quiz?retake=false
+> **GET** http://example.gov/api/courses/[course_id]/quiz?retake=1
 
 ------------------------------
 
 ### Get Content's Quiz
 
-**GET /courses/[course_id]/contents/[content_id]/quiz?retake=false**
+**GET /courses/[course_id]/contents/[content_id]/quiz?retake=0**
 
 Example:
-> **GET** http://example.gov/api/courses/[course_id]/contents/[content_id]/quiz?retake=false
+> **GET** http://example.gov/api/courses/[course_id]/contents/[content_id]/quiz?retake=0
 
 ------------------------------
 
@@ -541,6 +541,20 @@ Example:
 
 ------------------------------
 
+### Enroll a free course
+
+**POST /users/[user_id]/enrollments**
+
+Example:
+> **POST** http://example.gov/api/users/1/enrollments
+
+Request body:
+
+      {
+          "course": [course_id]
+      }
+
+------------------------------
 
 **Note**:
 
