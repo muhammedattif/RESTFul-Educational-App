@@ -17,6 +17,13 @@ from courses.api.serializers import CourseSerializer
 from courses.models import Course
 from users.models import User
 from rest_framework.permissions import IsAuthenticated
+from django_rest_passwordreset.views import ResetPasswordConfirm
+from django_rest_passwordreset.models import ResetPasswordToken
+from django_rest_passwordreset.signals import pre_password_reset, post_password_reset
+from django.contrib.auth.password_validation import validate_password, get_password_validators
+from rest_framework import exceptions
+from django.conf import settings
+from django.shortcuts import render
 
 class SignIn(APIView):
     throttle_classes = ()
@@ -114,6 +121,52 @@ class ChangePasswordView(UpdateAPIView):
             return Response(response)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ResetPasswordConfirmView(ResetPasswordConfirm):
+
+    def get(self, request):
+        return render(request, 'users/reset_password_confirm.html')
+
+    def post(self, request, *args, **kwargs):
+        data = {
+        'token': request.GET.get('token'),
+        'password': request.data['password']
+        }
+
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        password = serializer.validated_data['password']
+        token = serializer.validated_data['token']
+
+        # find token
+        reset_password_token = ResetPasswordToken.objects.filter(key=token).first()
+
+        # change users password (if we got to this code it means that the user is_active)
+        if reset_password_token.user.eligible_for_reset():
+            pre_password_reset.send(sender=self.__class__, user=reset_password_token.user)
+            try:
+                # validate the password against existing validators
+                validate_password(
+                    password,
+                    user=reset_password_token.user,
+                    password_validators=get_password_validators(settings.AUTH_PASSWORD_VALIDATORS)
+                )
+            except ValidationError as e:
+                # raise a validation error for the serializer
+                return render(request, 'users/reset_password_confirm.html')
+                # raise exceptions.ValidationError({
+                #     'password': e.messages
+                # })
+
+            reset_password_token.user.set_password(password)
+            reset_password_token.user.save()
+            post_password_reset.send(sender=self.__class__, user=reset_password_token.user)
+
+        # Delete all password reset tokens for this user
+        ResetPasswordToken.objects.filter(user=reset_password_token.user).delete()
+
+        return Response({'status': 'OK'})
+
 
 class ProfileDetail(APIView):
 
