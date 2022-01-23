@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'admin_reorder',
     'rest_framework',
     'rest_framework.authtoken',
+    'django_rest_passwordreset',
     'debug_toolbar',
     'drf_yasg',
 
@@ -184,6 +185,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 5
 }
+
+#Email BACKEND
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'emtyazadvisor.smtp@gmail.com'
+EMAIL_HOST_PASSWORD = 'jciqufezvdxbeyoa'
+EMAIL_TIMEOUT = 10
 
 import django_heroku
 django_heroku.settings(locals())

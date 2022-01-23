@@ -1,6 +1,6 @@
 from django.urls import path, include
 from payment.api.views import CoursesEnrollments
-from .views import SignIn, SignUp, ProfileDetail, EnrolledCourses
+from .views import SignIn, SignUp, ProfileDetail, EnrolledCourses, ChangePasswordView
 app_name = 'users'
 
 urlpatterns = [
@@ -11,5 +11,10 @@ urlpatterns = [
 
     # Authentication Routes
     path('signin', SignIn.as_view(), name="signin"),
-    path('signup', SignUp.as_view(), name="singup")
+    path('signup', SignUp.as_view(), name="singup"),
+
+    # Change Password
+    path('change-password/', ChangePasswordView.as_view(), name='change-password'),
+    # Reset Password
+    path('password_reset/', include('django_rest_passwordreset.urls', namespace='password_reset')),
   ]
