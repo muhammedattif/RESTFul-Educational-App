@@ -195,7 +195,7 @@ EMAIL_HOST_USER = 'emtyazadvisor.smtp@gmail.com'
 EMAIL_HOST_PASSWORD = 'jciqufezvdxbeyoa'
 EMAIL_TIMEOUT = 10
 
-# Rest Password key
+# REST_FRAMEWORK Rest Password
 DJANGO_REST_PASSWORDRESET_TOKEN_CONFIG = {
     "CLASS": "django_rest_passwordreset.tokens.RandomStringTokenGenerator",
     "OPTIONS": {
@@ -203,7 +203,7 @@ DJANGO_REST_PASSWORDRESET_TOKEN_CONFIG = {
         "max_length": 30
     }
 }
-
+DJANGO_REST_MULTITOKENAUTH_RESET_TOKEN_EXPIRY_TIME = 1 # Time in hours
 #
 # import django_heroku
 # django_heroku.settings(locals())
