@@ -21,6 +21,7 @@ from django_rest_passwordreset.views import ResetPasswordConfirm
 from django_rest_passwordreset.models import ResetPasswordToken
 from django_rest_passwordreset.signals import pre_password_reset, post_password_reset
 from django.contrib.auth.password_validation import validate_password, get_password_validators
+from django_rest_passwordreset.serializers import ResetTokenSerializer
 from rest_framework import exceptions
 from django.conf import settings
 from django.shortcuts import render
@@ -125,7 +126,22 @@ class ChangePasswordView(UpdateAPIView):
 class ResetPasswordConfirmView(ResetPasswordConfirm):
 
     def get(self, request):
-        return render(request, 'users/reset_password_confirm.html')
+        token = request.GET.get('token', None)
+        data = {'token': token}
+
+        try:
+            if not token:
+                raise Exception("Invalid Link.")
+            serializer = ResetTokenSerializer(data=data)
+            serializer.is_valid(raise_exception=False)
+            return render(request, 'users/reset_password_confirm.html')
+        except Exception as e:
+            context = {
+            'error_message': 'This link may be invalid or expired.'
+            }
+            return render(request, 'users/reset_password_error.html', context)
+
+
 
     def post(self, request, *args, **kwargs):
         data = {

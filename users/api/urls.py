@@ -18,6 +18,6 @@ urlpatterns = [
     # Reset Password
     path('password_reset/', include('django_rest_passwordreset.urls', namespace='password_reset')),
     # Change Password
-    path('reset-password/confirm', ResetPasswordConfirmView.as_view(), name='reset-password'),
+    path('reset-password/confirm/', ResetPasswordConfirmView.as_view(), name='reset-password'),
 
   ]
