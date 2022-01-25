@@ -27,10 +27,10 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 class QuizSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, read_only=True)
-    number_of_questions = serializers.CharField(source='get_questions_count')
+    # number_of_questions = serializers.CharField(source='get_questions_count')
     class Meta:
         model = Quiz
-        fields = ('id', 'name', 'description', 'number_of_questions', 'questions')
+        fields = ('id', 'name', 'description', 'questions')
 
 class BaseQuizResultSerializer(serializers.ModelSerializer):
     question = QuestionSerializer(many=False, read_only=True)
