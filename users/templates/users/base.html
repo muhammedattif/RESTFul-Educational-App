@@ -374,43 +374,76 @@ let attempts = 0;
 const form = document.querySelector('[data-form="form-1"]');
 const changePasswordDialog = document.querySelector('.change-password');
 
-let password1 = document.getElementsByName('password');
-let password2 = document.getElementsByName('password2');
+let password1 = document.getElementById('password1');
+let password2 = document.getElementById('password2');
 
 const handleAuthentication = event => {
-  if(password1 !== password2){
-    event.preventDefault();
+
+  var minNumberofChars = 6;
+  var maxNumberofChars = 16;
+  var regularExpression  = /^[a-zA-Z0-9!@#$%^&*]{6,16}$/;
+  var error = false;
+  var message = "Unknowen Error."
+console.log(regularExpression.test(password1.value));
+  if(password1.value !== password2.value){
+    error = true;
+    message = "Password doesn't match."
+  }
+  else if(password1.value.length < minNumberofChars || password1.value.length > maxNumberofChars){
+      error = true;
+      message = "Password must be at least 6 characters.";
+   }
+  else if(!regularExpression.test(password1.value)) {
+    error = true;
+    message = "Password should contain atleast one number and one special character";
+ }
+
+  if(error){
+    const changePasswordError = document.querySelector('.change-password-error');
     changePasswordError.classList.remove('hidden');
     form.classList.add('shake');
-    attempts ++;
-  }
 
-
-window.setTimeout(() => {
-  form.classList.remove('shake');
-
-  if (attempts >= 9999) {
-    const changePasswordForm = document.querySelector('[data-form="change-password"]');
-    const changePasswordError = document.querySelector('.change-password-error');
-    const closeChangePasswordFormButton = document.querySelector('.close-change-password');
     const closeChangePasswordErrorButton = document.querySelector('.close-change-password-error');
     const handleShowWarning = event => {
       event.preventDefault();
       changePasswordError.classList.remove('hidden');
     };
-    const handleCloseChangePasswordDialog = event => {
-      event.preventDefault();
-      changePasswordDialog.classList.add('hidden');
-    };
+
     const handleCloseChangePasswordErrorDialog = event => {
       event.preventDefault();
       changePasswordError.classList.add('hidden');
     };
 
-    changePasswordDialog.classList.remove('hidden');
-    changePasswordForm.addEventListener('submit', handleShowWarning);
-    closeChangePasswordFormButton.addEventListener('mousedown', handleCloseChangePasswordDialog);
     closeChangePasswordErrorButton.addEventListener('mousedown', handleCloseChangePasswordErrorDialog);
+
+
+    var errroMessage = document.querySelector('.error-message');
+    errroMessage.innerHTML = message;
+    attempts ++;
+    event.preventDefault();
+  }
+
+
+
+window.setTimeout(() => {
+  form.classList.remove('shake');
+
+
+  if (attempts >= 9999) {
+    const changePasswordForm = document.querySelector('[data-form="change-password"]');
+
+    const closeChangePasswordFormButton = document.querySelector('.close-change-password');
+
+    const handleCloseChangePasswordDialog = event => {
+      event.preventDefault();
+      changePasswordDialog.classList.add('hidden');
+    };
+
+
+    changePasswordDialog.classList.remove('hidden');
+
+    closeChangePasswordFormButton.addEventListener('mousedown', handleCloseChangePasswordDialog);
+
 
     return false;
   }

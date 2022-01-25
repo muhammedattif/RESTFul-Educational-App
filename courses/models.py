@@ -131,7 +131,7 @@ class Content(models.Model):
 class CourseActivity(models.Model):
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='course_activity')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='activity')
-    content = models.ForeignKey(Content, on_delete=models.CASCADE)
+    content = models.ForeignKey(Content, on_delete=models.CASCADE, related_name='activity')
 
     class Meta:
         verbose_name_plural = 'Courses Activity Tracker'

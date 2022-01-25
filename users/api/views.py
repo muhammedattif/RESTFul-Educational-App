@@ -169,7 +169,7 @@ class ResetPasswordConfirmView(ResetPasswordConfirm):
                 )
             except ValidationError as e:
                 # raise a validation error for the serializer
-                return render(request, 'users/reset_password_confirm.html')
+                return render(request, 'users/reset_password_error.html')
                 # raise exceptions.ValidationError({
                 #     'password': e.messages
                 # })
@@ -181,7 +181,7 @@ class ResetPasswordConfirmView(ResetPasswordConfirm):
         # Delete all password reset tokens for this user
         ResetPasswordToken.objects.filter(user=reset_password_token.user).delete()
 
-        return Response({'status': 'OK'})
+        return render(request, 'users/reset_password_done.html')
 
 
 class ProfileDetail(APIView):

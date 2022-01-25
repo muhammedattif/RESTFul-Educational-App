@@ -193,7 +193,7 @@ EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'emtyazadvisor.smtp@gmail.com'
 EMAIL_HOST_PASSWORD = 'jciqufezvdxbeyoa'
-EMAIL_TIMEOUT = 10
+EMAIL_TIMEOUT = 20 #Time in seconds
 
 # REST_FRAMEWORK Rest Password
 DJANGO_REST_PASSWORDRESET_TOKEN_CONFIG = {
