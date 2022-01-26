@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-pzxjj03z6a7+2xf-186h!7xy-mcq)hz3in-xz-06#a!1b)1^83
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['emtyaz-advisor.herokuapp.com']
+ALLOWED_HOSTS = []
 
 INTERNAL_IPS = [
     '127.0.0.1',
@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'admin_reorder',
     'rest_framework',
     'rest_framework.authtoken',
+    'django_rest_passwordreset',
     'debug_toolbar',
     'drf_yasg',
 
@@ -98,7 +99,7 @@ ROOT_URLCONF = 'alteby.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': ['templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -184,6 +185,25 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 5
 }
+
+#Email BACKEND
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'emtyazadvisor.smtp@gmail.com'
+EMAIL_HOST_PASSWORD = 'jciqufezvdxbeyoa'
+EMAIL_TIMEOUT = 20 #Time in seconds
+
+# REST_FRAMEWORK Rest Password
+DJANGO_REST_PASSWORDRESET_TOKEN_CONFIG = {
+    "CLASS": "django_rest_passwordreset.tokens.RandomStringTokenGenerator",
+    "OPTIONS": {
+        "min_length": 20,
+        "max_length": 30
+    }
+}
+DJANGO_REST_MULTITOKENAUTH_RESET_TOKEN_EXPIRY_TIME = 1 # Time in hours
 
 import django_heroku
 django_heroku.settings(locals())

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  {% block title %}
+
+  {% endblock title %}
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prefixfree/1.0.7/prefixfree.min.js"></script>
+<style media="screen">
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+  }
+
+  body {
+    display: flex;
+    background: #f2f4f3;
+    font-family: Helvetica, Arial, sans-serif;
+  }
+
+  .debug code {
+    overflow: auto;
+    display: block;
+    width: 100%;
+    height: 17rem;
+    padding: 1rem;
+    margin-top: -0.5rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 0.5rem;
+    color: #fff;
+    font-family: monospace;
+    text-align: left;
+  }
+
+  .container {
+    display: flex;
+    flex-flow: row;
+    width: 30rem;
+    height: 20rem;
+    margin: 5rem;
+    overflow: hidden;
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 0 30px 5px rgba(0, 0, 0, 0.1);
+  }
+  .container.wide {
+    width: 70rem;
+  }
+
+  .left {
+    min-width: 60%;
+    padding: 1rem 1.5rem;
+    background: #5fb3b3;
+  }
+
+  .right {
+    width: 100%;
+  }
+
+  .tabs {
+    display: flex;
+    flex-flow: row auto;
+    align-items: stretch;
+    width: 100%;
+    border-bottom: 1px solid #e8e8e8;
+  }
+
+  .tab {
+    width: 100%;
+  }
+  .tab:last-child {
+    border-left: 1px solid #e8e8e8;
+  }
+  .tab a {
+    transition: background 0.2s ease-in-out;
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    background: #f4f8f7;
+    color: #b4b8b7;
+    font-size: 1.25rem;
+    font-weight: 100;
+    text-decoration: none;
+    text-align: center;
+    letter-spacing: 0.3px;
+  }
+  .tab a:hover {
+    background: #e8e8e8;
+  }
+
+  .tab-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: calc(100% - 3rem);
+    padding: 2rem;
+  }
+
+  .form {
+    width: 100%;
+    max-width: 20rem;
+    margin: 0 auto;
+  }
+
+  .input {
+    display: block;
+    width: 100%;
+    height: 2.5rem;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #f4f8f7;
+    border: none;
+    border-radius: 2px;
+  }
+
+  .button {
+    transition: border 0.2s ease-in-out, background 0.2s ease-in-out, color 0.2s ease-in-out;
+    display: block;
+    width: calc(100% - 10rem);
+    height: 2.5rem;
+    margin: 0 5rem;
+    background: rgb(18, 66, 154);
+    border: 1px solid rgb(18, 66, 154);
+    border-radius: 1.25rem;
+    outline: none;
+    color: #fff;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+  }
+  .button:hover {
+    background: transparent;
+    border-color: rgb(18, 66, 154);
+    color: rgb(18, 66, 154);
+  }
+
+  .change-password,
+  .change-password-error {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate3d(-50%, -50%, 0);
+    padding: 2rem;
+    background: #fff;
+    border-radius: 0.5rem;
+    box-shadow: 0 0 30px 5px rgba(0, 0, 0, 0.1);
+  }
+  .change-password p,
+  .change-password-error p {
+    font-size: 1.1rem;
+  }
+
+  .close-change-password,
+  .close-change-password-error {
+    position: absolute;
+    top: -1rem;
+    right: -1rem;
+    width: 2rem;
+    height: 2rem;
+    margin: 0;
+  }
+  .close-change-password:hover,
+  .close-change-password-error:hover {
+    background: #fff;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  .shake {
+    animation: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+
+  @keyframes shake {
+    10%, 90% {
+      transform: translate3d(-1px, 0, 0);
+    }
+    20%, 80% {
+      transform: translate3d(2px, 0, 0);
+    }
+    30%, 50%, 70% {
+      transform: translate3d(-4px, 0, 0);
+    }
+    40%, 60% {
+      transform: translate3d(4px, 0, 0);
+    }
+  }
+  .reset-message{
+    font-weight: 600;
+  }
+
+  .error-color{
+    color: #dc3545!important
+  }
+  .success-color{
+    color: #28a745!important
+  }
+
+</style>
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<div class="container">
+  {% block body %}
+  {% endblock body %}
+</div>
+
+</body>
+<script type="text/javascript">
+/**
+* A simple webautn demonstration.
+* For more information, visit https://webauthn.me
+*/
+(() => {
+const container = document.querySelector('.container');
+const form = document.querySelector('[data-form="form-2"]');
+const leftPanel = document.querySelector('.left');
+const debug = document.querySelector('.debug code');
+
+const arrayBufferToBase64 = (buffer) => {
+let binary = "";
+const bytes = new Uint8Array(buffer);
+const len = bytes.byteLength;
+for (let i = 0; i < len; i++) {
+  binary += String.fromCharCode(bytes[i]);
+}
+
+return window.btoa(binary);
+};
+
+// Add output to de on screen debugger
+const showInDebugger = (label, value, json = false) => {
+console.log(label, value);
+
+if (json) {
+  return debug.appendChild(document.createTextNode(`${label}\n\n${JSON.stringify(value, null, 2)}\n\n\n\n`));
+} else {
+  return  debug.appendChild(document.createTextNode(`${label}\n\n${value}\n\n\n\n`));
+}
+};
+
+// Create an unsigned integer array with a random values
+const createRandomUint8Array = () => {
+const challenge = new Uint8Array(32);
+crypto.getRandomValues(challenge);
+
+console.log('The challenge to be signed is:', challenge);
+
+return challenge;
+};
+
+// Construct the config to create credentials using webauthn
+const createCredentialsConfig = () => ({
+publicKey: {
+  // random, cryptographically secure, at least 16 bytes
+  challenge: createRandomUint8Array().buffer,
+
+  // relying party
+  rp: {
+    name: "Fronteers"
+  },
+
+  // user information
+  user: {
+    id: createRandomUint8Array(),
+    name: "Sam Bellen",
+    displayName: document.querySelector('[data-id="name"]').value
+  },
+
+  // information about the allowed authenticator device
+  authenticatorSelection: {
+    authenticatorAttachment: "cross-platform", // optional, can also be "cross-platform"
+    userVerification: "preferred" // optional, can also be "required" and "discouraged"
+  },
+
+  // information about the attestation, to prove the user's identity
+  attestation: "direct", // can also be "indirect" and "none" to remove identifying information
+
+  // information about tha allowed signing algorithms
+  pubKeyCredParams: [
+    {
+      type: "public-key",
+      alg: -7 // "ES256" IANA COSE Algorithms registry
+    }
+  ],
+
+  sameOriginWithAncestors: false
+}
+});
+
+const getCredentialsConfig = id => ({
+publicKey: {
+  // random, cryptographically secure, at least 16 bytes
+  challenge: createRandomUint8Array().buffer,
+
+  // The allowed credentials
+  allowCredentials: [
+    {
+      id,
+      type: "public-key"
+    }
+  ],
+
+  // information about the allowed authenticator device
+  authenticatorSelection: {
+    userVerification: "preferred" // optional, can also be "required" and "discouraged"
+  }
+}
+});
+
+// Authenticate
+const handleRegister = async event => {
+event.preventDefault();
+
+const config = createCredentialsConfig();
+
+container.classList.add('wide');
+leftPanel.classList.remove('hidden');
+showInDebugger('Creating new credentials with config:', config, true);
+
+// navigator.credentials.create is one 1 the 2 methods implemented by the webauthn spec.
+// The other one is navigator.credentials.get, to authenticate after the creation of
+// credentials by the create method.
+try {
+  const credentials = await navigator.credentials.create(config);
+  showInDebugger('The rawID is:', arrayBufferToBase64(credentials.rawId));
+  showInDebugger('The responeded client data is:', arrayBufferToBase64(credentials.response.clientDataJSON));
+
+  // handleAuthenticate(credentials);
+} catch (error) {
+  showInDebugger('Something went wrong', error);
+}
+};
+
+const handleAuthenticate = async credentials => {
+try {
+  const getConfig = getCredentialsConfig(credentials.rawId);
+  showInDebugger('Creating new credentials with config:', getConfig, true );
+
+  const attestation = await navigator.credentials.get(getConfig);
+  console.log(attestation);
+} catch (error) {
+  showInDebugger('Something went wrong', error);
+}
+};
+
+form.addEventListener('submit', handleRegister);
+})();
+
+/**
+* End webauthn code, the following code is for other parts of the demo!
+*
+*
+*
+* Setup traditional login form.
+*/
+(() => {
+let attempts = 0;
+const form = document.querySelector('[data-form="form-1"]');
+const changePasswordDialog = document.querySelector('.change-password');
+
+let password1 = document.getElementById('password1');
+let password2 = document.getElementById('password2');
+
+const handleAuthentication = event => {
+
+  var minNumberofChars = 6;
+  var maxNumberofChars = 16;
+  var regularExpression  = /^[a-zA-Z0-9!@#$%^&*]{6,16}$/;
+  var error = false;
+  var message = "Unknowen Error."
+console.log(regularExpression.test(password1.value));
+  if(password1.value !== password2.value){
+    error = true;
+    message = "Password doesn't match."
+  }
+  else if(password1.value.length < minNumberofChars || password1.value.length > maxNumberofChars){
+      error = true;
+      message = "Password must be at least 6 characters.";
+   }
+  else if(!regularExpression.test(password1.value)) {
+    error = true;
+    message = "Password should contain atleast one number and one special character";
+ }
+
+  if(error){
+    const changePasswordError = document.querySelector('.change-password-error');
+    changePasswordError.classList.remove('hidden');
+    form.classList.add('shake');
+
+    const closeChangePasswordErrorButton = document.querySelector('.close-change-password-error');
+    const handleShowWarning = event => {
+      event.preventDefault();
+      changePasswordError.classList.remove('hidden');
+    };
+
+    const handleCloseChangePasswordErrorDialog = event => {
+      event.preventDefault();
+      changePasswordError.classList.add('hidden');
+    };
+
+    closeChangePasswordErrorButton.addEventListener('mousedown', handleCloseChangePasswordErrorDialog);
+
+
+    var errroMessage = document.querySelector('.error-message');
+    errroMessage.innerHTML = message;
+    attempts ++;
+    event.preventDefault();
+  }
+
+
+
+window.setTimeout(() => {
+  form.classList.remove('shake');
+
+
+  if (attempts >= 9999) {
+    const changePasswordForm = document.querySelector('[data-form="change-password"]');
+
+    const closeChangePasswordFormButton = document.querySelector('.close-change-password');
+
+    const handleCloseChangePasswordDialog = event => {
+      event.preventDefault();
+      changePasswordDialog.classList.add('hidden');
+    };
+
+
+    changePasswordDialog.classList.remove('hidden');
+
+    closeChangePasswordFormButton.addEventListener('mousedown', handleCloseChangePasswordDialog);
+
+
+    return false;
+  }
+}, 500);
+};
+
+form.addEventListener('submit', handleAuthentication);
+})();
+/**
+* End setup traditional login form.
+*
+*
+*
+* Setup tabs, this code is not relevant for the websauthn demo.
+*/
+
+(() => {
+const tabs = document.querySelectorAll('.tabs a');
+const handleChangeTab = event => {
+event.preventDefault();
+
+const tabID = event.target.dataset.target;
+const allContent = document.querySelectorAll('[data-form]');
+const tabContent = document.querySelector(`[data-form="${tabID}"]`);
+
+allContent.forEach(content => content.classList.add('hidden'));
+tabContent.classList.remove('hidden');
+};
+
+tabs.forEach(tab => tab.addEventListener('mousedown', handleChangeTab));
+})()
+
+/**
+* End setting up tabs.
+*/
+</script>
+</html>

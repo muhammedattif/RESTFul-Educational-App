@@ -47,7 +47,7 @@ class CourseDetail(APIView):
 
     def get(self, request, course_id, format=None):
 
-        course, found, error = utils.get_course(course_id, prefetch_related=['privacy__shared_with'])
+        course, found, error = utils.get_course(course_id, prefetch_related=['content', 'categories__course_set', 'privacy__shared_with'])
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
@@ -76,12 +76,12 @@ class ContentDetail(APIView):
 class ContentList(APIView, PageNumberPagination):
     def get(self, request, course_id, format=None):
 
-        course, found, error = utils.get_course(course_id)
+        course, found, error = utils.get_course(course_id, prefetch_related=['content__privacy__shared_with'])
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
         if utils.allowed_to_access_course(request.user, course):
-            contents = Content.objects.prefetch_related('privacy__shared_with').filter(course__id=course_id)
+            contents = course.content.all()
             contents = self.paginate_queryset(contents, request, view=self)
             serializer = DemoContentSerializer(contents, many=True, context={'request': request})
             return self.get_paginated_response(serializer.data)
@@ -229,13 +229,15 @@ class CourseQuizResult(APIView):
 
     def get(self, request, course_id):
 
-        course, found, error = utils.get_course(course_id)
+        course, found, error = utils.get_course(course_id, prefetch_related=['quiz__questions'], select_related=['quiz'])
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
+
         quiz = course.quiz
-        # Must select distinct, but it is not supported by SQLite
-        quiz_answers = QuizResult.objects.select_related('quiz', 'question', 'selected_choice').prefetch_related('question__choices').filter(user=request.user, quiz=quiz)
-        serializer = QuizResultSerializer(quiz_answers, many=True, context={'request': request})
+        if not quiz:
+            return Response(general_utils.error('quiz_not_found'), status=status.HTTP_404_NOT_FOUND)
+
+        serializer = QuizResultSerializer(course.quiz, many=False, context={'request': request})
         return Response(serializer.data)
 
 

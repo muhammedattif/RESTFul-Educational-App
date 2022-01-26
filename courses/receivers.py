@@ -30,4 +30,3 @@ def calculate_duration(sender, instance=None, created=False, **kwargs):
             instance.duration = audio.duration  # this will return the length of the video in seconds
         else:
             instance.duration = 0
-        instance.save()

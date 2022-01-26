@@ -27,18 +27,41 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 class QuizSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, read_only=True)
-    number_of_questions = serializers.CharField(source='get_questions_count')
+    # number_of_questions = serializers.CharField(source='get_questions_count')
     class Meta:
         model = Quiz
-        fields = ('id', 'name', 'description', 'number_of_questions', 'questions')
+        fields = ('id', 'name', 'description', 'questions')
 
-class QuizResultSerializer(serializers.ModelSerializer):
+class BaseQuizResultSerializer(serializers.ModelSerializer):
     question = QuestionSerializer(many=False, read_only=True)
     selected_choice = ChoiceSerializer(many=False, read_only=True)
     class Meta:
         model = QuizResult
         fields = ('id', 'question', 'selected_choice', 'is_correct')
 
+class QuizResultSerializer(serializers.ModelSerializer):
+    selected_choice = ChoiceSerializer(many=False, read_only=True)
+    result = serializers.SerializerMethodField('get_result')
+    questions_count = serializers.SerializerMethodField('get_questions_count')
+    score = serializers.SerializerMethodField('get_score')
+    class Meta:
+        model = Quiz
+        fields = '__all__'
+
+    num_of_right_answers = 0
+    def get_result(self, quiz):
+        user = self.context.get('request', None).user
+        # Must select distinct, but it is not supported by SQLite
+        quiz_answers = QuizResult.objects.select_related('question', 'selected_choice').prefetch_related('question__choices').filter(user=user, quiz=quiz)
+        self.num_of_right_answers = quiz_answers.filter(is_correct=True).count()
+        return BaseQuizResultSerializer(quiz_answers, many=True, read_only=True).data
+
+    def get_score(self, quiz):
+        return self.num_of_right_answers
+
+
+    def get_questions_count(self, quiz):
+        return quiz.questions.count()
 
 class CoursePrivacySerializer(serializers.ModelSerializer):
     class Meta:
@@ -64,7 +87,7 @@ class DemoContentSerializer(serializers.ModelSerializer):
 
     def content_viewed(self, content):
         user = self.context.get('request', None).user
-        return CourseActivity.objects.filter(content=content, course=content.course, user=user).exists()
+        return content.activity.filter(user=user).exists()
 
 class FullContentSerializer(DemoContentSerializer):
     class Meta:
@@ -95,7 +118,8 @@ class CourseSerializer(serializers.ModelSerializer, QuerySerializerMixin):
     privacy = CoursePrivacySerializer(many=False, read_only=True)
     categories = CategorySerializer(many=True, read_only=True)
 
-    PREFETCH_FIELDS = ['content', 'activity', 'categories', 'categories__course_set', 'privacy__shared_with']
+    PREFETCH_FIELDS = ['content', 'categories__course_set', 'privacy__shared_with']
+
 
     class Meta:
         model = Course

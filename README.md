@@ -180,6 +180,53 @@ Example:
 
 ------------------------------
 
+### Change Password
+
+**PUT /users/change-password**
+
+Example:
+> **PUT** http://example.gov/api/users/change-password
+
+Request body:
+
+    {
+    "old_password": "Old@123",
+    "new_password": "New@123"
+    }
+
+------------------------------
+
+
+### Reset Password
+
+**POST /users/password_reset**
+
+Example:
+> **POST** http://example.gov/api/users/reset-password
+
+Request body:
+
+    {
+    "email": [Email]
+    }
+
+------------------------------
+
+### Reset Password Confirm
+
+**POST /users/password_reset/confirm/**
+
+Example:
+> **POST** http://example.gov/api/users/reset-password/confirm/
+
+Request body:
+
+    {
+    "password": [Email],
+    "Token": [Token]
+    }
+
+------------------------------
 
 ## Courses
 

@@ -43,7 +43,7 @@ class Choice(models.Model):
 
 class QuizResult(models.Model):
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name="quiz_result")
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="result")
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     selected_choice = models.ForeignKey(Choice, on_delete=models.CASCADE)
     is_correct = models.BooleanField(default=False)
@@ -131,7 +131,7 @@ class Content(models.Model):
 class CourseActivity(models.Model):
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='course_activity')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='activity')
-    content = models.ForeignKey(Content, on_delete=models.CASCADE)
+    content = models.ForeignKey(Content, on_delete=models.CASCADE, related_name='activity')
 
     class Meta:
         verbose_name_plural = 'Courses Activity Tracker'
