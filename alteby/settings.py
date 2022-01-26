@@ -204,6 +204,6 @@ DJANGO_REST_PASSWORDRESET_TOKEN_CONFIG = {
     }
 }
 DJANGO_REST_MULTITOKENAUTH_RESET_TOKEN_EXPIRY_TIME = 1 # Time in hours
-#
-# import django_heroku
-# django_heroku.settings(locals())
+
+import django_heroku
+django_heroku.settings(locals())

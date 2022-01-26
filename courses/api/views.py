@@ -229,7 +229,7 @@ class CourseQuizResult(APIView):
 
     def get(self, request, course_id):
 
-        course, found, error = utils.get_course(course_id, prefetch_related=[])
+        course, found, error = utils.get_course(course_id, prefetch_related=['quiz__questions'], select_related=['quiz'])
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 

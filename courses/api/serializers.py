@@ -42,16 +42,26 @@ class BaseQuizResultSerializer(serializers.ModelSerializer):
 class QuizResultSerializer(serializers.ModelSerializer):
     selected_choice = ChoiceSerializer(many=False, read_only=True)
     result = serializers.SerializerMethodField('get_result')
+    questions_count = serializers.SerializerMethodField('get_questions_count')
+    score = serializers.SerializerMethodField('get_score')
     class Meta:
         model = Quiz
         fields = '__all__'
 
+    num_of_right_answers = 0
     def get_result(self, quiz):
         user = self.context.get('request', None).user
         # Must select distinct, but it is not supported by SQLite
         quiz_answers = QuizResult.objects.select_related('question', 'selected_choice').prefetch_related('question__choices').filter(user=user, quiz=quiz)
+        self.num_of_right_answers = quiz_answers.filter(is_correct=True).count()
         return BaseQuizResultSerializer(quiz_answers, many=True, read_only=True).data
 
+    def get_score(self, quiz):
+        return self.num_of_right_answers
+
+
+    def get_questions_count(self, quiz):
+        return quiz.questions.count()
 
 class CoursePrivacySerializer(serializers.ModelSerializer):
     class Meta:

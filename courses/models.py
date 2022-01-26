@@ -43,7 +43,7 @@ class Choice(models.Model):
 
 class QuizResult(models.Model):
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name="quiz_result")
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="result")
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     selected_choice = models.ForeignKey(Choice, on_delete=models.CASCADE)
     is_correct = models.BooleanField(default=False)
