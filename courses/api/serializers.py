@@ -3,6 +3,8 @@ from rest_framework.fields import CurrentUserDefault
 from courses.models import Course, CourseActivity, Content, CoursePrivacy, ContentPrivacy, Category, Quiz, QuizResult, Question, Choice, Attachement, Comment, Feedback
 from categories.api.serializers import CategorySerializer
 from django.db.models import Sum
+from payment.models import CourseEnrollment
+
 
 class FeedbackSerializer(serializers.ModelSerializer):
     class Meta:
@@ -114,6 +116,7 @@ class QuerySerializerMixin(object):
 class CourseSerializer(serializers.ModelSerializer, QuerySerializerMixin):
     progress = serializers.SerializerMethodField('get_progress')
     duration = serializers.SerializerMethodField('get_duration')
+    is_enrolled = serializers.SerializerMethodField('get_enrollment')
     number_of_lectures = serializers.IntegerField(source='get_content_count')
     privacy = CoursePrivacySerializer(many=False, read_only=True)
     categories = CategorySerializer(many=True, read_only=True)
@@ -123,7 +126,7 @@ class CourseSerializer(serializers.ModelSerializer, QuerySerializerMixin):
 
     class Meta:
         model = Course
-        fields = ('id', 'title', 'description', 'date_created', 'categories', 'price', 'privacy', 'quiz', 'number_of_lectures', 'duration', 'progress')
+        fields = ('id', 'title', 'description', 'date_created', 'categories', 'price', 'privacy', 'quiz', 'number_of_lectures', 'duration', 'progress', 'is_enrolled')
 
     def get_progress(self, course):
         user = self.context.get('request', None).user
@@ -137,6 +140,11 @@ class CourseSerializer(serializers.ModelSerializer, QuerySerializerMixin):
     def get_duration(self, course):
         duration = course.content.aggregate(sum=Sum('duration'))['sum']
         return duration
+
+    def get_enrollment(self, course):
+        user = self.context.get('request', None).user
+        return CourseEnrollment.objects.filter(user=user, course=course).exists()
+
 
 
 class CommentSerializer(serializers.ModelSerializer):

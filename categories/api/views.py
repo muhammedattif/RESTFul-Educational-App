@@ -26,6 +26,7 @@ class CategoryFilter(APIView, PageNumberPagination):
         except Category.DoesNotExist:
             return Response(general_utils.error('category_not_found'), status=status.HTTP_404_NOT_FOUND)
 
+
         courses = self.paginate_queryset(courses, request, view=self)
         serializer = CourseSerializer(courses, many=True, context={'request': request})
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
