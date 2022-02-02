@@ -126,7 +126,7 @@ class CourseSerializer(serializers.ModelSerializer, QuerySerializerMixin):
 
     class Meta:
         model = Course
-        fields = ('id', 'title', 'description', 'date_created', 'categories', 'price', 'privacy', 'quiz', 'number_of_lectures', 'duration', 'progress', 'is_enrolled')
+        fields = ('id', 'image', 'title', 'description', 'date_created', 'categories', 'price', 'privacy', 'quiz', 'number_of_lectures', 'duration', 'progress', 'is_enrolled')
 
     def get_progress(self, course):
         user = self.context.get('request', None).user
