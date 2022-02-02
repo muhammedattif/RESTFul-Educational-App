@@ -43,7 +43,7 @@ class CourseConfig(NestedModelAdmin):
     list_display = ('title', 'date_created')
 
     fieldsets = (
-        ("Course Information", {'fields': ('title', 'description', 'price', 'categories', 'featured', 'quiz')}),
+        ("Course Information", {'fields': ('image', 'title', 'description', 'price', 'categories', 'featured', 'quiz')}),
     )
 
     @transaction.atomic

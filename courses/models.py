@@ -68,7 +68,6 @@ class QuizAttempt(models.Model):
 
 ####### Course Section
 class Course(models.Model):
-
     title = models.CharField(max_length=100)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -76,6 +75,7 @@ class Course(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     quiz = models.OneToOneField(Quiz, on_delete=models.CASCADE, blank=True, null=True)
     featured = models.BooleanField(default=False)
+    image = models.ImageField(upload_to="courses/images", blank=True)
 
     def __str__(self):
           return self.title
@@ -147,7 +147,7 @@ class CourseCommentsManager(models.Manager):
 
 class ContentCommentsManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(~Q(content=None), status='published')
+        return super().get_queryset().filter(~Q(course=None), status='published')
 
 class Comment(models.Model):
 
