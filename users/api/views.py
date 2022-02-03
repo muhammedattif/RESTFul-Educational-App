@@ -25,6 +25,7 @@ from django_rest_passwordreset.serializers import ResetTokenSerializer
 from rest_framework import exceptions
 from django.conf import settings
 from django.shortcuts import render
+from rest_framework.pagination import PageNumberPagination
 
 class SignIn(APIView):
     throttle_classes = ()
@@ -192,11 +193,12 @@ class ProfileDetail(APIView):
         context = serializer.data
         return Response(serializer.data)
 
-class EnrolledCourses(APIView):
+class EnrolledCourses(APIView, PageNumberPagination):
 
     def get(self, request, user_id):
         courses_ids = request.user.enrollments.values_list('course', flat=True)
         courses = Course.objects.filter(id__in=courses_ids)
+        courses = self.paginate_queryset(courses, request, view=self)
+
         serializer = CourseSerializer(courses, many=True, context={'request':request})
-        context = serializer.data
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
