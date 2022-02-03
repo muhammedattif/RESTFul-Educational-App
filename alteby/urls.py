@@ -37,6 +37,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('__debug__/', include(debug_toolbar.urls)),
 
+    # Main
+    path('main', include('main.urls', 'main')),
+    # Main
+    path('api/main/', include('main.api.urls', 'main_apis')),
 
     # Users
     path('users', include('users.urls', 'users')),
