@@ -90,6 +90,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'admin_reorder.middleware.ModelAdminReorder',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'users.middleware.OneSessionPerUserMiddleware'
+
 ]
 
 AUTH_EXEMPT_ROUTES = ('api')
@@ -177,7 +179,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
+        # 'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
@@ -205,6 +207,6 @@ DJANGO_REST_PASSWORDRESET_TOKEN_CONFIG = {
     }
 }
 DJANGO_REST_MULTITOKENAUTH_RESET_TOKEN_EXPIRY_TIME = 1 # Time in hours
-
-import django_heroku
-django_heroku.settings(locals())
+#
+# import django_heroku
+# django_heroku.settings(locals())

@@ -26,6 +26,7 @@ from rest_framework import exceptions
 from django.conf import settings
 from django.shortcuts import render
 from rest_framework.pagination import PageNumberPagination
+from django.contrib.auth import login
 
 class SignIn(APIView):
     throttle_classes = ()
@@ -43,7 +44,11 @@ class SignIn(APIView):
         try:
             serializer.is_valid(raise_exception=True)
             user = serializer.validated_data['user']
+            login(request, user)
             token, created = Token.objects.get_or_create(user=user)
+            if not created:
+                token.delete()
+                token, created = Token.objects.get_or_create(user=user)
 
             content = {
                 'token': token.key,

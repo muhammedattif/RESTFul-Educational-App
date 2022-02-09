@@ -81,6 +81,7 @@ class AuthTokenSerializer(serializers.Serializer):
                         'status': 'error',
                         'message': msg
                     })
+
             else:
                 msg = 'Unable to log in with provided credentials.'
                 raise serializers.ValidationError({

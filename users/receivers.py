@@ -1,12 +1,13 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import Student, Teacher
+from .models import Student, Teacher, LoggedInUser
 from rest_framework.authtoken.models import Token
 from django.conf import settings
 from django.urls import reverse
 from django_rest_passwordreset.signals import reset_password_token_created
 from django.core.mail import send_mail, EmailMultiAlternatives
 from django.template.loader import render_to_string
+from django.contrib.auth import user_logged_in, user_logged_out
 
 UserModel = settings.AUTH_USER_MODEL
 
@@ -22,6 +23,16 @@ def create_user_profile(sender, instance=None, created=False, **kwargs):
         if instance.is_teacher:
             Teacher.objects.create(user=instance)
 
+
+@receiver(user_logged_in)
+def on_user_logged_in(sender, request, **kwargs):
+    print(1)
+    LoggedInUser.objects.get_or_create(user=kwargs.get('user'))
+
+
+@receiver(user_logged_out)
+def on_user_logged_out(sender, **kwargs):
+    LoggedInUser.objects.filter(user=kwargs.get('user')).delete()
 
 
 
