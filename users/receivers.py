@@ -26,7 +26,6 @@ def create_user_profile(sender, instance=None, created=False, **kwargs):
 
 @receiver(user_logged_in)
 def on_user_logged_in(sender, request, **kwargs):
-    print(1)
     LoggedInUser.objects.get_or_create(user=kwargs.get('user'))
 
 
