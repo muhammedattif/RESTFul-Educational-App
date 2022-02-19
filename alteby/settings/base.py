@@ -181,6 +181,12 @@ DJANGO_REST_PASSWORDRESET_TOKEN_CONFIG = {
     }
 }
 DJANGO_REST_MULTITOKENAUTH_RESET_TOKEN_EXPIRY_TIME = 1 # Time in hours
+
+# Django Admin
+SITE_INDEX_TITLE = 'Emtyaz Advoisor'
+SITE_TITLE = 'Administration'
+SITE_HEADER = 'Emtyaz Advoisor'
+
 #
 # import django_heroku
 # django_heroku.settings(locals())
