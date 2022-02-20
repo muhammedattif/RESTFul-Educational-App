@@ -24,7 +24,7 @@ class CategoryFilter(APIView, PageNumberPagination):
         try:
             courses = Category.objects.prefetch_related('course_set','course_set__content', 'course_set__categories__course_set').get(id=category_id).course_set.all()
         except Category.DoesNotExist:
-            return Response(general_utils.error('category_not_found'), status=status.HTTP_404_NOT_FOUND)
+            return Response(general_utils.error('not_found'), status=status.HTTP_404_NOT_FOUND)
 
 
         courses = self.paginate_queryset(courses, request, view=self)

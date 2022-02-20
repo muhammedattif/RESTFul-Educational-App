@@ -4,8 +4,14 @@ from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from .serializers import CourseSerializer, DemoContentSerializer, FullContentSerializer, QuizSerializer, QuizResultSerializer, AttachementSerializer, CommentSerializer, FeedbackSerializer, QuestionSerializer
-from courses.models import Course, CourseActivity, Content, Comment, Feedback, Quiz, Question, Choice, QuizResult
+from .serializers import (
+CourseSerializer, CoursesSerializer, UnitSerializer, TopicSerializer, UnitTopicsSerializer, DemoContentSerializer,
+FullContentSerializer, QuizSerializer,
+QuizResultSerializer, AttachementSerializer,
+CommentSerializer, FeedbackSerializer,
+QuestionSerializer
+)
+from courses.models import Course, Unit, Topic, CourseActivity, Content, Comment, Feedback, Quiz, Question, Choice, QuizResult
 from playlists.models import WatchHistory
 from django.db.models import Q
 from functools import reduce
@@ -19,7 +25,7 @@ from django.db import transaction
 from django.db.models import Prefetch
 
 class CourseList(ListAPIView):
-    serializer_class = CourseSerializer
+    serializer_class = CoursesSerializer
 
     def get_queryset(self):
         request_params = self.request.GET
@@ -47,20 +53,21 @@ class CourseDetail(APIView):
 
     def get(self, request, course_id, format=None):
 
-        course, found, error = utils.get_course(course_id, prefetch_related=['content', 'categories__course_set', 'privacy__shared_with'])
+        course, found, error = utils.get_course(course_id, prefetch_related=['units', 'categories__course_set', 'privacy__shared_with'])
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        if utils.allowed_to_access_course(request.user, course):
-            serializer = CourseSerializer(course, many=False, context={'request': request})
-            return Response(serializer.data)
-
-        return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
+        serializer = CourseSerializer(course, many=False, context={'request': request})
+        return Response(serializer.data)
 
 class ContentDetail(APIView):
 
     def get(self, request, course_id, content_id, format=None):
-        content, found, error = utils.get_content(content_id, course_id=course_id, prefetch_related=['quiz__questions__choices'])
+        filter_kwargs = {
+        'id': content_id,
+        'topic__unit__course__id': course_id
+        }
+        content, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs, prefetch_related=['quiz__questions__choices'])
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
@@ -89,6 +96,69 @@ class ContentList(APIView, PageNumberPagination):
 
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
+class CourseUnitsList(APIView, PageNumberPagination):
+    def get(self, request, course_id, format=None):
+
+        course, found, error = utils.get_course(course_id)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        if not utils.allowed_to_access_course(request.user, course):
+            return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
+
+        units = course.units.all()
+        units = self.paginate_queryset(units, request, view=self)
+        serializer = UnitSerializer(units, many=True, context={'request': request})
+        return self.get_paginated_response(serializer.data)
+
+
+
+class UnitDetail(APIView):
+
+    def get(self, request, course_id, unit_id, format=None):
+        filter_kwargs = {
+        'id': unit_id,
+        'course__id': course_id
+        }
+        unit, found, error = utils.get_object(model=Unit, filter_kwargs=filter_kwargs)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UnitTopicsSerializer(unit, many=False, context={'request': request})
+        return Response(serializer.data)
+
+class TopicList(APIView, PageNumberPagination):
+
+    def get(self, request, course_id, unit_id, format=None):
+        filter_kwargs = {
+        'id': unit_id,
+        'course__id': course_id
+        }
+        unit, found, error = utils.get_object(model=Unit, filter_kwargs=filter_kwargs)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        topics = unit.topics.all()
+        topics = self.paginate_queryset(topics, request, view=self)
+        serializer = TopicSerializer(topics, many=True, context={'request': request})
+        return self.get_paginated_response(serializer.data)
+
+class TopicDetail(APIView, PageNumberPagination):
+
+    def get(self, request, course_id, unit_id, topic_id, format=None):
+        filter_kwargs = {
+        'id': topic_id,
+        'unit__course__id': course_id,
+        'unit__id': unit_id
+        }
+        topic, found, error = utils.get_object(model=Topic, filter_kwargs=filter_kwargs)
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        content = topic.content.all()
+        content = self.paginate_queryset(content, request, view=self)
+        serializer = FullContentSerializer(content, many=True, context={'request': request})
+        return self.get_paginated_response(serializer.data)
 
 class QuizDetail(APIView):
 
@@ -100,7 +170,11 @@ class QuizDetail(APIView):
             retake = int(request_params.get('retake'))
 
         if content_id:
-            content, found, error = utils.get_content(content_id, course_id=course_id, select_related=['quiz'])
+            filter_kwargs = {
+            'id': content_id,
+            'topic__unit__course__id': course_id
+            }
+            content, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs, select_related=['quiz'])
             if not found:
                 return Response(error, status=status.HTTP_404_NOT_FOUND)
 
@@ -114,7 +188,7 @@ class QuizDetail(APIView):
 
                     return Response(serializer.data)
                 else:
-                    response = general_utils.error('quiz_not_found')
+                    response = general_utils.error('not_found')
             else:
                 response = general_utils.error('access_denied')
 
@@ -136,7 +210,7 @@ class QuizDetail(APIView):
 
                     return Response(serializer.data)
                 else:
-                    response = general_utils.error('quiz_not_found')
+                    response = general_utils.error('not_found')
             else:
                 response = general_utils.error('access_denied')
 
@@ -160,7 +234,7 @@ class CourseQuizAnswer(APIView):
 
         quiz = course.quiz
         if not quiz:
-            return Response(general_utils.error('quiz_not_found'), status=status.HTTP_404_NOT_FOUND)
+            return Response(general_utils.error('not_found'), status=status.HTTP_404_NOT_FOUND)
 
         answers_objs = []
         for answer in quiz_answers:
@@ -169,9 +243,9 @@ class CourseQuizAnswer(APIView):
                 question = Question.objects.get(id=answer['question_id'])
                 selected_choice = Choice.objects.get(id=answer['selected_choice_id'], question=question)
             except Question.DoesNotExist:
-                return Response(general_utils.error('question_not_found'), status=status.HTTP_404_NOT_FOUND)
+                return Response(general_utils.error('not_found'), status=status.HTTP_404_NOT_FOUND)
             except Choice.DoesNotExist:
-                return Response(general_utils.error('choice_not_found'), status=status.HTTP_404_NOT_FOUND)
+                return Response(general_utils.error('not_found'), status=status.HTTP_404_NOT_FOUND)
 
             answer = QuizResult(user=request.user, quiz=quiz, question=question, selected_choice=selected_choice, is_correct=selected_choice.is_correct)
             answers_objs.append(answer)
@@ -193,17 +267,17 @@ class ContentQuizAnswer(APIView):
 
         quiz_answers = request_body['quiz_answers']
 
-        course, found, error = utils.get_course(course_id)
-        if not found:
-            return Response(error, status=status.HTTP_404_NOT_FOUND)
-
-        content, found, error = utils.get_content(content_id)
+        filter_kwargs = {
+        'id': content_id,
+        'topic__unit__course__id': course_id
+        }
+        content, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs, select_related=['quiz'])
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
         quiz = content.quiz
         if not quiz:
-            return Response(general_utils.error('quiz_not_found'), status=status.HTTP_404_NOT_FOUND)
+            return Response(general_utils.error('not_found'), status=status.HTTP_404_NOT_FOUND)
 
         answers_objs = []
         for answer in quiz_answers:
@@ -212,9 +286,9 @@ class ContentQuizAnswer(APIView):
                 question = Question.objects.get(id=answer['question_id'])
                 selected_choice = Choice.objects.get(id=answer['selected_choice_id'], question=question)
             except Question.DoesNotExist:
-                return Response(general_utils.error('question_not_found'), status=status.HTTP_404_NOT_FOUND)
+                return Response(general_utils.error('not_found'), status=status.HTTP_404_NOT_FOUND)
             except Choice.DoesNotExist:
-                return Response(general_utils.error('choice_not_found'), status=status.HTTP_404_NOT_FOUND)
+                return Response(general_utils.error('not_found'), status=status.HTTP_404_NOT_FOUND)
 
             answer = QuizResult(user=request.user, quiz=quiz, question=question, selected_choice=selected_choice, is_correct=selected_choice.is_correct)
             answers_objs.append(answer)
@@ -235,7 +309,7 @@ class CourseQuizResult(APIView):
 
         quiz = course.quiz
         if not quiz:
-            return Response(general_utils.error('quiz_not_found'), status=status.HTTP_404_NOT_FOUND)
+            return Response(general_utils.error('not_found'), status=status.HTTP_404_NOT_FOUND)
 
         serializer = QuizResultSerializer(course.quiz, many=False, context={'request': request})
         return Response(serializer.data)
@@ -248,7 +322,11 @@ class ContentQuizResult(APIView):
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        content, found, error = utils.get_content(content_id)
+        filter_kwargs = {
+        'id': content_id,
+        'topic__unit__course__id': course_id
+        }
+        content, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
@@ -277,7 +355,11 @@ class ContentAttachement(APIView):
 
     def get(self, request, course_id, content_id, format=None):
 
-        content, found, error = utils.get_content(content_id, course_id=course_id)
+        filter_kwargs = {
+        'id': content_id,
+        'topic__unit__course__id': course_id
+        }
+        content, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
@@ -321,7 +403,11 @@ class CourseComments(APIView):
 class ContentComments(APIView):
     def get(self, request, course_id, content_id, format=None):
 
-        content, found, error = utils.get_content(content_id, course_id=course_id, prefetch_related=['comments', 'privacy'])
+        filter_kwargs = {
+        'id': content_id,
+        'topic__unit__course__id': course_id
+        }
+        content, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs, prefetch_related=['comments', 'privacy'])
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
@@ -333,7 +419,11 @@ class ContentComments(APIView):
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
     def post(self, request, course_id, content_id, format=None):
-        content, found, error = utils.get_content(content_id, course_id=course_id)
+        filter_kwargs = {
+        'id': content_id,
+        'topic__unit__course__id': course_id
+        }
+        content, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
@@ -387,7 +477,11 @@ class CourseFeedbacks(APIView, PageNumberPagination):
 class TrackCourseActivity(APIView):
 
     def post(self, request, course_id, content_id, format=None):
-        content, found, error = utils.get_content(content_id, course_id=course_id)
+        filter_kwargs = {
+        'id': content_id,
+        'topic__unit__course__id': course_id
+        }
+        content, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 

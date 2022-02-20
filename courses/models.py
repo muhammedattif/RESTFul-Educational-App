@@ -1,14 +1,14 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models import Q
+from django.db.models import Q, Sum, Count
 from django.db.models.functions import Cast
-
 from django.conf import settings
 from model_utils import Choices
 from categories.models import Category
+import datetime
+from alteby.utils import seconds_to_duration
 
 UserModel = settings.AUTH_USER_MODEL
-
 
 ####### Quizzes section
 class Quiz(models.Model):
@@ -92,13 +92,68 @@ class Course(models.Model):
         else:
             return user in self.privacy.shared_with.all()
 
-    def get_content_count(self):
+
+    def get_units_count(self):
+        return self.units.count()
+
+    def get_lectures_count(self):
+        return self.units.aggregate(count=Count('topics__content'))['count']
+
+    def get_lectures_duration(self):
+        duration = self.units.aggregate(sum=Sum('topics__content__duration'))['sum']
+        if not duration:
+            duration = 0
+        return seconds_to_duration(duration)
+
+
+class Unit(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='units')
+    title = models.TextField()
+    order = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return self.title
+
+    def get_topics_count(self):
+        return self.topics.count()
+
+    def get_lectures_count(self):
+        return self.topics.aggregate(count=Count('content'))['count']
+
+    def get_lectures_duration(self):
+        duration = self.topics.aggregate(sum=Sum('content__duration'))['sum']
+
+        if not duration:
+            duration = 0
+        return seconds_to_duration(duration)
+
+class Topic(models.Model):
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='topics')
+    title = models.TextField()
+    order = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return self.title
+
+    def get_lectures_count(self):
         return self.content.count()
 
+    def get_lectures_duration(self):
+        duration = self.content.aggregate(sum=Sum('duration'))['sum']
 
-######### Course Content section
+        if not duration:
+            duration = 0
+        return seconds_to_duration(duration)
+
+######### Topic Content section
 class Content(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="content")
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="content")
     title = models.CharField(max_length=100)
     description = models.TextField()
     video = models.FileField(upload_to='video', blank=True, null=True)

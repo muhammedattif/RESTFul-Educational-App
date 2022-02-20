@@ -76,7 +76,10 @@ class PlaylistContent(APIView):
         except Exception as e:
             return Response(general_utils.error('required_fields'), status=status.HTTP_400_BAD_REQUEST)
 
-        content, found, error = utils.get_content(content_id)
+        filter_kwargs = {
+        'id': content_id
+        }
+        content, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
@@ -96,7 +99,10 @@ class PlaylistContent(APIView):
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        content, found, error = utils.get_content(content_id)
+        filter_kwargs = {
+        'id': content_id
+        }
+        content, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
@@ -142,7 +148,10 @@ class FavoriteController(APIView):
             return Response(general_utils.error('required_fields'), status=status.HTTP_400_BAD_REQUEST)
 
 
-        content, found, error = utils.get_content(content_id)
+        filter_kwargs = {
+        'id': content_id
+        }
+        content, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
@@ -156,7 +165,11 @@ class FavoriteController(APIView):
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
     def delete(self, request, content_id, format=None):
-        content, found, error = utils.get_content(content_id)
+
+        filter_kwargs = {
+        'id': content_id
+        }
+        content, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 

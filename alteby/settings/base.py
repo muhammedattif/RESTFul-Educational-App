@@ -91,7 +91,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'admin_reorder.middleware.ModelAdminReorder',
-    'users.middleware.OneSessionPerUserMiddleware'
+    'users.middleware.OneSessionPerUserMiddleware',
+    'alteby.middleware.CoursePermissionMiddleware'
 
 ]
 

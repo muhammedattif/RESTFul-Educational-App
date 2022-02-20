@@ -1,9 +1,18 @@
 from rest_framework import serializers
 from rest_framework.fields import CurrentUserDefault
-from courses.models import Course, CourseActivity, Content, CoursePrivacy, ContentPrivacy, Category, Quiz, QuizResult, Question, Choice, Attachement, Comment, Feedback
+from courses.models import (
+Course, Unit, Topic,
+CourseActivity,
+Content, CoursePrivacy,
+ContentPrivacy, Category,
+Quiz, QuizResult, Question, Choice,
+Attachement, Comment, Feedback
+)
+
 from categories.api.serializers import CategorySerializer
 from django.db.models import Sum
 from payment.models import CourseEnrollment
+from alteby.utils import seconds_to_duration
 
 
 class FeedbackSerializer(serializers.ModelSerializer):
@@ -92,9 +101,13 @@ class DemoContentSerializer(serializers.ModelSerializer):
         return content.activity.filter(user=user).exists()
 
 class FullContentSerializer(DemoContentSerializer):
+    duration = serializers.SerializerMethodField('convert_duration')
     class Meta:
         model = Content
-        fields = ('id', 'course_id', 'title', 'video', 'audio', 'text', 'duration', 'order', 'privacy')
+        fields = ('id', 'topic_id', 'title', 'video', 'audio', 'text', 'duration', 'order', 'privacy')
+
+    def convert_duration(self, content):
+        return seconds_to_duration(content.duration)
 
     def get_course_id(self, content):
         return content.course.id
@@ -113,39 +126,99 @@ class QuerySerializerMixin(object):
             queryset = queryset.prefetch_related(*cls.PREFETCH_FIELDS)
         return queryset
 
+class TopicSerializer(serializers.ModelSerializer):
+    lectures_count = serializers.IntegerField(source='get_lectures_count')
+    lectures_duration = serializers.CharField(source='get_lectures_duration')
+    class Meta:
+        model = Topic
+        fields =('id', 'title', 'unit', 'lectures_count', 'lectures_duration', 'order')
+
+class UnitSerializer(serializers.ModelSerializer):
+    lectures_count = serializers.IntegerField(source='get_lectures_count')
+    lectures_duration = serializers.CharField(source='get_lectures_duration')
+    class Meta:
+        model = Unit
+        fields = ('id', 'title', 'course', 'order', 'lectures_duration', 'lectures_count')
+
+class UnitTopicsSerializer(serializers.ModelSerializer):
+    topics = TopicSerializer(many=True, read_only=True)
+    lectures_count = serializers.IntegerField(source='get_lectures_count')
+    lectures_duration = serializers.CharField(source='get_lectures_duration')
+    class Meta:
+        model = Unit
+        fields = ('id', 'title', 'course', 'order', 'topics', 'lectures_duration', 'lectures_count')
+
 class CourseSerializer(serializers.ModelSerializer, QuerySerializerMixin):
     progress = serializers.SerializerMethodField('get_progress')
-    duration = serializers.SerializerMethodField('get_duration')
     is_enrolled = serializers.SerializerMethodField('get_enrollment')
-    number_of_lectures = serializers.IntegerField(source='get_content_count')
+    units_count = serializers.IntegerField(source='get_units_count')
+    lectures_count = serializers.IntegerField(source='get_lectures_count')
+    duration = serializers.CharField(source='get_lectures_duration')
     privacy = CoursePrivacySerializer(many=False, read_only=True)
     categories = CategorySerializer(many=True, read_only=True)
+    units = UnitSerializer(many=True, read_only=True)
 
-    PREFETCH_FIELDS = ['content', 'categories__course_set', 'privacy__shared_with']
+    PREFETCH_FIELDS = ['categories__course_set', 'privacy__shared_with']
 
 
     class Meta:
         model = Course
-        fields = ('id', 'image', 'title', 'description', 'date_created', 'categories', 'price', 'privacy', 'quiz', 'number_of_lectures', 'duration', 'progress', 'is_enrolled')
+        fields = (
+        'id', 'image', 'title',
+        'description', 'date_created',
+        'categories', 'units', 'price',
+        'privacy', 'quiz',
+        'units_count', 'lectures_count', 'duration', 'progress', 'is_enrolled')
 
     def get_progress(self, course):
         user = self.context.get('request', None).user
         content_viewed_count = course.activity.filter(user=user).count()
 
-        content_count = course.get_content_count()
+        content_count = course.get_lectures_count()
         if not content_count:
             return 0.0
         return content_viewed_count/content_count*100
 
-    def get_duration(self, course):
-        duration = course.content.aggregate(sum=Sum('duration'))['sum']
-        return duration
 
     def get_enrollment(self, course):
         user = self.context.get('request', None).user
         return CourseEnrollment.objects.filter(user=user, course=course).exists()
 
 
+class CoursesSerializer(serializers.ModelSerializer, QuerySerializerMixin):
+    progress = serializers.SerializerMethodField('get_progress')
+    is_enrolled = serializers.SerializerMethodField('get_enrollment')
+    units_count = serializers.IntegerField(source='get_units_count')
+    lectures_count = serializers.IntegerField(source='get_lectures_count')
+    duration = serializers.CharField(source='get_lectures_duration')
+    privacy = CoursePrivacySerializer(many=False, read_only=True)
+    categories = CategorySerializer(many=True, read_only=True)
+
+    PREFETCH_FIELDS = ['categories__course_set', 'privacy__shared_with']
+
+
+    class Meta:
+        model = Course
+        fields = (
+        'id', 'image', 'title',
+        'description', 'date_created',
+        'categories', 'price',
+        'privacy', 'quiz',
+        'units_count', 'lectures_count', 'duration', 'progress', 'is_enrolled')
+
+    def get_progress(self, course):
+        user = self.context.get('request', None).user
+        content_viewed_count = course.activity.filter(user=user).count()
+
+        content_count = course.get_lectures_count()
+        if not content_count:
+            return 0.0
+        return content_viewed_count/content_count*100
+
+
+    def get_enrollment(self, course):
+        user = self.context.get('request', None).user
+        return CourseEnrollment.objects.filter(user=user, course=course).exists()
 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:

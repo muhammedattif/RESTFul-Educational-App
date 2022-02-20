@@ -1,3 +1,4 @@
+import datetime
 
 def error(error_key):
     return {
@@ -13,15 +14,16 @@ def success(success_key):
         'success_description': success_messages[success_key]
     }
 
+def seconds_to_duration(seconds):
+    duration = str(datetime.timedelta(seconds=seconds))
+    duration_slices = duration.split(':')
+    return f'{duration_slices[0]}h {duration_slices[1]}m {duration_slices[2]}s'
+
+
 error_messages = {
-    'content_not_found': 'This content cannot be found',
-    'course_not_found': 'This course cannot be found',
-    'category_not_found': 'This Category cannot be found',
+    'not_found': 'Not Found!',
     'access_denied': 'You don\'t have access to this resourse!, enroll this course to see its content.',
     'required_fields': 'Some fields are required.',
-    'quiz_not_found': 'This content does not has any quizzes.',
-    'question_not_found': 'One of the questions does not exists.',
-    'choice_not_found': 'Selected answers must be one of the choices.',
     'page_access_denied': 'You don\'t have access to preview this page.',
     'empty_quiz_answers': "Quiz answers cannot be empty."
 }

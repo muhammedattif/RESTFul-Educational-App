@@ -16,11 +16,28 @@ Quiz,
 Question,
 Choice,
 QuizResult,
-QuizAttempt
+QuizAttempt,
+Unit,
+Topic
 )
 
 admin.site.register(QuizResult)
 admin.site.register(QuizAttempt)
+
+class UnitTopicsInline(NestedStackedInline):
+    model = Topic
+    can_delete = True
+    extra = 1
+    verbose_name_plural = 'Topics'
+    fk_name = 'unit'
+
+class CourseUnitsInline(NestedStackedInline):
+    model = Unit
+    can_delete = False
+    extra = 2
+    verbose_name_plural = 'Units'
+    fk_name = 'course'
+    inlines = [UnitTopicsInline]
 
 class CoursePrivacyInline(NestedStackedInline):
     model = CoursePrivacy
@@ -54,7 +71,7 @@ class CourseConfig(NestedModelAdmin):
             print(e)
             pass
 
-    inlines = [CoursePrivacyInline, CourseAttachementsInline]
+    inlines = [CoursePrivacyInline, CourseAttachementsInline, CourseUnitsInline]
 
 
 admin.site.register(Course, CourseConfig)
@@ -75,11 +92,11 @@ class ContentPrivacyInline(NestedStackedInline):
 class ContentConfig(NestedModelAdmin):
     model = Content
 
-    list_filter = ('course', )
-    list_display = ('course', 'title')
+    list_filter = ('topic', )
+    list_display = ('topic', 'title')
 
     fieldsets = (
-        ("Content Information", {'fields': ('title', 'description', 'course', 'video', 'audio', 'text', 'duration', 'order', 'quiz')}),
+        ("Content Information", {'fields': ('title', 'description', 'topic', 'video', 'audio', 'text', 'duration', 'order', 'quiz')}),
     )
 
     inlines = [ContentPrivacyInline, ContentAttachementsInline]

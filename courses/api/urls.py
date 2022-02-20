@@ -1,5 +1,14 @@
 from django.urls import path, include
-from .views import CourseList, FeaturedCoursesList, CourseDetail, TrackCourseActivity, ContentList, ContentDetail, CourseComments, CourseFeedbacks, ContentComments, QuizDetail, CourseQuizAnswer, ContentQuizAnswer, CourseQuizResult, ContentQuizResult, CourseAttachement, ContentAttachement
+from .views import (
+CourseList, CourseUnitsList, UnitDetail, TopicList, TopicDetail,
+FeaturedCoursesList, CourseDetail,
+TrackCourseActivity, ContentList,
+ContentDetail, CourseComments,
+CourseFeedbacks, ContentComments,
+QuizDetail, CourseQuizAnswer, ContentQuizAnswer,
+CourseQuizResult, ContentQuizResult,
+CourseAttachement, ContentAttachement
+)
 
 app_name = 'courses'
 
@@ -16,6 +25,13 @@ urlpatterns = [
   path('<int:course_id>/quiz/result', CourseQuizResult.as_view(), name='course_quiz_result'),
   path('<int:course_id>/quiz/answer', CourseQuizAnswer.as_view(), name='course_quiz_answer'),
   path('<int:course_id>/attachements', CourseAttachement.as_view(), name='course_attachment'),
+
+  # Units API
+  path('<int:course_id>/units/', CourseUnitsList.as_view(), name='units'),
+  path('<int:course_id>/units/<int:unit_id>', UnitDetail.as_view(), name='unit'),
+  # Topics API
+  path('<int:course_id>/units/<int:unit_id>/topics', TopicList.as_view(), name='topics'),
+  path('<int:course_id>/units/<int:unit_id>/topics/<int:topic_id>', TopicDetail.as_view(), name='topic-detail'),
 
   # Content API
   path('<int:course_id>/contents/', ContentList.as_view(), name='contents'),
