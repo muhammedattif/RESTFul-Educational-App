@@ -23,7 +23,7 @@ Topic
 
 admin.site.register(QuizResult)
 admin.site.register(QuizAttempt)
-
+admin.site.register(Unit)
 class UnitTopicsInline(NestedStackedInline):
     model = Topic
     can_delete = True
@@ -60,7 +60,7 @@ class CourseConfig(NestedModelAdmin):
     list_display = ('title', 'date_created')
 
     fieldsets = (
-        ("Course Information", {'fields': ('image', 'title', 'description', 'price', 'categories', 'featured', 'quiz')}),
+        ("Course Information", {'fields': ('image', 'title', 'description', 'price', 'categories', 'tags', 'featured', 'quiz')}),
     )
 
     @transaction.atomic
@@ -107,11 +107,11 @@ admin.site.register(CourseActivity)
 class CommentConfig(NestedModelAdmin):
     model = Comment
 
-    list_filter = ('user', 'course', 'content', 'date_created', 'status')
-    list_display = ('user', 'course', 'content', 'date_created', 'status')
+    list_filter = ('user', 'object_type', 'date_created', 'status')
+    list_display = ('user', 'object_type', 'date_created', 'status')
 
     fieldsets = (
-        ("Comment Information", {'fields': ('user', 'course', 'content', 'comment_body', 'status')}),
+        ("Comment Information", {'fields': ('user', 'object_type', 'object_id', 'comment_body', 'status')}),
     )
 
 admin.site.register(Comment, CommentConfig)

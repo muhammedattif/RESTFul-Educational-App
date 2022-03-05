@@ -1,13 +1,13 @@
 from django.urls import path, include
 from .views import (
-CourseList, CourseUnitsList, UnitDetail, TopicList, TopicDetail,
+CourseList, CourseUnitsList, UnitDetail, TopicList, TopicDetail, LecturesList,
 FeaturedCoursesList, CourseDetail,
-TrackCourseActivity, ContentList,
-ContentDetail, CourseComments,
-CourseFeedbacks, ContentComments,
-QuizDetail, CourseQuizAnswer, ContentQuizAnswer,
-CourseQuizResult, ContentQuizResult,
-CourseAttachement, ContentAttachement
+TrackCourseActivity,
+LectureDetail, CourseComments,
+CourseFeedbacks, LectureComments,
+QuizDetail, CourseQuizAnswer, LectureQuizAnswer,
+CourseQuizResult, LectureQuizResult,
+CourseAttachement, LectureAttachement
 )
 
 app_name = 'courses'
@@ -33,15 +33,24 @@ urlpatterns = [
   path('<int:course_id>/units/<int:unit_id>/topics', TopicList.as_view(), name='topics'),
   path('<int:course_id>/units/<int:unit_id>/topics/<int:topic_id>', TopicDetail.as_view(), name='topic-detail'),
 
+  path('<int:course_id>/units/<int:unit_id>/topics/<int:topic_id>/lectures', LecturesList.as_view(), name='lectures-list'),
+  path('<int:course_id>/units/<int:unit_id>/topics/<int:topic_id>/lectures/<int:lecture_id>', LectureDetail.as_view(), name='lecture-detail'),
+  path('<int:course_id>/units/<int:unit_id>/topics/<int:topic_id>/lectures/<int:lecture_id>/mark_as_read', TrackCourseActivity.as_view(), name='mark_as_read'),
+  path('<int:course_id>/units/<int:unit_id>/topics/<int:topic_id>/lectures/<int:lecture_id>/comments', LectureComments.as_view(), name='lecture_comments'),
+  path('<int:course_id>/units/<int:unit_id>/topics/<int:topic_id>/lectures/<int:lecture_id>/quiz', QuizDetail.as_view(), name='lecture_quiz'),
+  path('<int:course_id>/units/<int:unit_id>/topics/<int:topic_id>/lectures/<int:lecture_id>/quiz/result', LectureQuizResult.as_view(), name='lecture_quiz_result'),
+  path('<int:course_id>/units/<int:unit_id>/topics/<int:topic_id>/lectures/<int:lecture_id>/quiz/answer', LectureQuizAnswer.as_view(), name='lecture_quiz_answer'),
+  path('<int:course_id>/units/<int:unit_id>/topics/<int:topic_id>/lectures/<int:lecture_id>/attachements', LectureAttachement.as_view(), name='lecture_attachment'),
+
   # Content API
-  path('<int:course_id>/contents/', ContentList.as_view(), name='contents'),
-  path('<int:course_id>/contents/<int:content_id>', ContentDetail.as_view(), name='content'),
-  path('<int:course_id>/contents/<int:content_id>/mark_as_read', TrackCourseActivity.as_view(), name='mark_as_read'),
-  path('<int:course_id>/contents/<int:content_id>/comments', ContentComments.as_view(), name='content_comments'),
-  path('<int:course_id>/contents/<int:content_id>/quiz', QuizDetail.as_view(), name='content_quiz'),
-  path('<int:course_id>/contents/<int:content_id>/quiz/result', ContentQuizResult.as_view(), name='content_quiz_result'),
-  path('<int:course_id>/contents/<int:content_id>/quiz/answer', ContentQuizAnswer.as_view(), name='content_quiz_answer'),
-  path('<int:course_id>/contents/<int:content_id>/attachements', ContentAttachement.as_view(), name='content_attachment'),
+  path('<int:course_id>/contents/', LecturesList.as_view(), name='contents'), # DEPRECATED
+  path('<int:course_id>/contents/<int:content_id>', LectureDetail.as_view(), name='content'), # DEPRECATED
+  path('<int:course_id>/contents/<int:content_id>/mark_as_read', TrackCourseActivity.as_view(), name='mark_as_read'), # DEPRECATED
+  path('<int:course_id>/contents/<int:content_id>/comments', LectureComments.as_view(), name='content_comments'), # DEPRECATED
+  path('<int:course_id>/contents/<int:content_id>/quiz', QuizDetail.as_view(), name='content_quiz'), # DEPRECATED
+  path('<int:course_id>/contents/<int:content_id>/quiz/result', LectureQuizResult.as_view(), name='content_quiz_result'), # DEPRECATED
+  path('<int:course_id>/contents/<int:content_id>/quiz/answer', LectureQuizAnswer.as_view(), name='content_quiz_answer'), # DEPRECATED
+  path('<int:course_id>/contents/<int:content_id>/attachements', LectureAttachement.as_view(), name='content_attachment'), # DEPRECATED
 
 
 ]

@@ -4,9 +4,11 @@ from django.db.models import Q, Sum, Count
 from django.db.models.functions import Cast
 from django.conf import settings
 from model_utils import Choices
-from categories.models import Category
+from categories.models import Category, Tag
 import datetime
 from alteby.utils import seconds_to_duration
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 UserModel = settings.AUTH_USER_MODEL
 
@@ -76,6 +78,7 @@ class Course(models.Model):
     quiz = models.OneToOneField(Quiz, on_delete=models.CASCADE, blank=True, null=True)
     featured = models.BooleanField(default=False)
     image = models.ImageField(upload_to="courses/images", blank=True)
+    tags = models.ManyToManyField(Tag, blank=True)
 
     def __str__(self):
           return self.title
@@ -105,6 +108,15 @@ class Course(models.Model):
             duration = 0
         return seconds_to_duration(duration)
 
+    def is_finished(self, user):
+        lectures = Content.objects.filter(topic__unit__course=self)
+        activity = self.activity.filter(user=user, content__in=lectures).count()
+        return len(lectures) == activity
+
+    @property
+    def comments(self):
+        return Comment.objects.filter(object_type=ContentType.objects.get_for_model(self).id, status='published')
+
 
 class Unit(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='units')
@@ -130,6 +142,12 @@ class Unit(models.Model):
             duration = 0
         return seconds_to_duration(duration)
 
+    def is_finished(self, user):
+        topics_ids = self.topics.all().values_list('id', flat=True)
+        lectures = Content.objects.filter(topic__in=topics_ids)
+        activity = self.course.activity.filter(user=user, content__in=lectures).count()
+        return len(lectures) == activity
+
 class Topic(models.Model):
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='topics')
     title = models.TextField()
@@ -150,6 +168,11 @@ class Topic(models.Model):
         if not duration:
             duration = 0
         return seconds_to_duration(duration)
+
+    def is_finished(self, user):
+        lectures = self.content.all()
+        activity = self.unit.course.activity.filter(user=user, content__in=lectures).count()
+        return len(lectures) == activity
 
 ######### Topic Content section
 class Content(models.Model):
@@ -180,6 +203,10 @@ class Content(models.Model):
         else:
             return user in self.privacy.shared_with.all()
 
+    @property
+    def comments(self):
+        return Comment.objects.filter(object_type=ContentType.objects.get_for_model(self).id, status='published')
+
 
 
 ###### Course Activity Tracking
@@ -196,13 +223,9 @@ class CourseActivity(models.Model):
 
 
 #### Comments and feedback section
-class CourseCommentsManager(models.Manager):
+class PublishedCommentsManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(content=None, status='published')
-
-class ContentCommentsManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(~Q(course=None), status='published')
+        return super().get_queryset().filter(status='published')
 
 class Comment(models.Model):
 
@@ -212,18 +235,19 @@ class Comment(models.Model):
     )
 
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name="comments")
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="comments")
-    content = models.ForeignKey(Content, on_delete=models.CASCADE, null=True, blank=True, related_name="comments")
+
+    choices = Q(app_label = 'courses', model = 'course') | Q(app_label = 'courses', model = 'content')
+
+    object_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to=choices, related_name='comments')
+    object_id = models.PositiveIntegerField()
+    object = GenericForeignKey('object_type', 'object_id')
+
     comment_body = models.TextField()
     status = models.CharField(max_length=100, choices=STATUS_CHOICES, default=STATUS_CHOICES.pending)
     date_created = models.DateTimeField(auto_now_add=True)
 
     # Default manager
     objects = models.Manager()
-
-    # Custom managers for comments
-    course_comments = CourseCommentsManager()
-    content_comments = ContentCommentsManager()
 
 
     def __str__(self):

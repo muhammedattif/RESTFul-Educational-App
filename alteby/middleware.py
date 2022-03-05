@@ -27,7 +27,6 @@ class CoursePermissionMiddleware(MiddlewareMixin):
                     'id': course_id
                     }
                     course, found, error = get_object(model=Course, filter_kwargs=filter_kwargs)
-                    print(1)
                     if not found:
                         return JsonResponse(error, status=404)
 

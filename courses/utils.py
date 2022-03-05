@@ -52,7 +52,6 @@ def get_object(model, filter_kwargs, prefetch_related=None, select_related=None)
         return None, False, general_utils.error('not_found')
 
 def allowed_to_access_content(user, content):
-    print(dir(content))
     if content.can_access(user) or is_enrolled(user, content.topic.unit.course):
         return True
     return False
