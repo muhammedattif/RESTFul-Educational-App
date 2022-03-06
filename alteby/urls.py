@@ -20,6 +20,7 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from django.conf import settings
+from alteby.error_views import *
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -79,3 +80,8 @@ urlpatterns = [
 admin.site.index_title = settings.SITE_INDEX_TITLE
 admin.site.site_title = settings.SITE_TITLE
 admin.site.site_header = settings.SITE_HEADER
+
+
+# Errors Handlers
+handler404 = custom_error_404
+handler500 = custom_error_500

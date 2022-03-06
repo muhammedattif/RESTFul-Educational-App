@@ -23,6 +23,7 @@ def seconds_to_duration(seconds):
 
 
 error_messages = {
+    'internal_error': 'Internal Server Error.',
     'not_found': 'Not Found!',
     'access_denied': 'You don\'t have access to this resourse!, enroll this course to see its content.',
     'required_fields': 'Some fields are required.',

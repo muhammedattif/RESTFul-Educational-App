@@ -29,7 +29,18 @@ class CourseList(ListAPIView):
 
     def get_queryset(self):
         request_params = self.request.GET
-        queryset = Course.objects.all()
+        queryset = Course.objects.prefetch_related('tags', 'privacy__shared_with').select_related('privacy').annotate(
+            units_count=Count('units', distinct=True)
+        ).annotate(
+            lectures_count=Count('units__topics__content', distinct=True)
+        ).annotate(
+            duration=Sum('units__topics__content__duration', distinct=True)
+        ).annotate(
+            is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=self.request.user))
+        ).annotate(
+            lectures_viewed_count=Count('activity', filter=Q(activity__user=self.request.user), distinct=True)
+        ).all()
+
         if 'q' in request_params:
             search_query = request_params.get('q').split(" ")
             query = reduce(operator.or_, (Q(title__icontains=search_term) | Q(description__icontains=search_term) for search_term in search_query))
@@ -43,7 +54,18 @@ class FeaturedCoursesList(ListAPIView):
     serializer_class = CourseSerializer
 
     def get_queryset(self):
-        queryset = Course.objects.all()
+        queryset = Course.objects.prefetch_related('tags', 'privacy__shared_with').select_related('privacy').annotate(
+            units_count=Count('units', distinct=True)
+        ).annotate(
+            lectures_count=Count('units__topics__content', distinct=True)
+        ).annotate(
+            duration=Sum('units__topics__content__duration', distinct=True)
+        ).annotate(
+            is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=self.request.user))
+        ).annotate(
+            lectures_viewed_count=Count('activity', filter=Q(activity__user=self.request.user), distinct=True)
+        ).all()
+
         serializer = self.get_serializer()
         return serializer.get_related_queries(queryset)
 
@@ -52,7 +74,7 @@ class CourseDetail(APIView):
 
     def get(self, request, course_id, format=None):
 
-        course = Course.objects.prefetch_related('units', 'categories__course_set', 'tags', 'privacy__shared_with').filter(
+        course = Course.objects.prefetch_related('privacy__shared_with').select_related('privacy').filter(
             id=course_id
         ).annotate(
             units_count=Count('units', distinct=True)
@@ -113,11 +135,6 @@ class CourseUnitsList(APIView, PageNumberPagination):
 class UnitDetail(APIView):
 
     def get(self, request, course_id, unit_id, format=None):
-        filter_kwargs = {
-        'id': unit_id,
-        'course__id': course_id
-        }
-
         unit = Unit.objects.annotate(
                                 lectures_count=Count('topics__content', distinct=True),
                                 lectures_duration=Sum('topics__content__duration', distinct=True)
@@ -137,7 +154,10 @@ class TopicList(APIView, PageNumberPagination):
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        topics = unit.topics.all().annotate(lectures_count=Count('content', distinct=True), lectures_duration=Sum('content__duration', distinct=True))
+        topics = unit.topics.all().annotate(
+                                    lectures_count=Count('content', distinct=True),
+                                    lectures_duration=Sum('content__duration', distinct=True)
+                                    )
         topics = self.paginate_queryset(topics, request, view=self)
         serializer = TopicsListSerializer(topics, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
@@ -170,7 +190,13 @@ class LecturesList(APIView, PageNumberPagination):
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        content = topic.content.all()
+        content = topic.content.select_related('privacy').prefetch_related('privacy__shared_with').annotate(
+                viewed=Exists(
+                            CourseActivity.objects.filter(content=OuterRef('pk'), user=self.request.user
+                            )
+                )
+        ).all()
+
         lectures = self.paginate_queryset(content, request, view=self)
         serializer = DemoContentSerializer(lectures, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
@@ -200,7 +226,6 @@ class QuizDetail(APIView):
                 return Response(error, status=status.HTTP_403_FORBIDDEN)
 
             if not lecture.quiz:
-                print(lecture.quiz)
                 error = general_utils.error('not_found')
                 return Response(error, status=status.HTTP_404_NOT_FOUND)
 

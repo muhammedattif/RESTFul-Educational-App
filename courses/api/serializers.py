@@ -90,7 +90,7 @@ class CourseActivitySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class DemoContentSerializer(serializers.ModelSerializer):
-    viewed = serializers.SerializerMethodField('is_viewed')
+    viewed = serializers.BooleanField()
     privacy = ContentPrivacySerializer(many=False, read_only=True)
     class Meta:
         model = Content
@@ -179,7 +179,10 @@ class CourseSerializer(serializers.ModelSerializer, QuerySerializerMixin):
     is_enrolled = serializers.BooleanField()
     units_count = serializers.IntegerField()
     lectures_count = serializers.IntegerField()
+
+    # Flag: this field hits the DB
     is_finished = serializers.SerializerMethodField('get_activity_status')
+
     duration = serializers.SerializerMethodField('format_lectures_duration')
     privacy = CoursePrivacySerializer(many=False, read_only=True)
     categories = CategorySerializer(many=True, read_only=True)
@@ -221,12 +224,17 @@ class CourseSerializer(serializers.ModelSerializer, QuerySerializerMixin):
 
 class CoursesSerializer(serializers.ModelSerializer, QuerySerializerMixin):
     progress = serializers.SerializerMethodField('get_progress')
-    is_enrolled = serializers.SerializerMethodField('get_enrollment')
-    units_count = serializers.IntegerField(source='get_units_count')
-    lectures_count = serializers.IntegerField(source='get_lectures_count')
-    duration = serializers.CharField(source='get_lectures_duration')
+    is_enrolled = serializers.BooleanField()
+    units_count = serializers.IntegerField()
+    lectures_count = serializers.IntegerField()
+
+    # Flag: this field hits the DB
+    is_finished = serializers.SerializerMethodField('get_activity_status')
+
+    duration = serializers.SerializerMethodField('format_lectures_duration')
     privacy = CoursePrivacySerializer(many=False, read_only=True)
     categories = CategorySerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
 
     PREFETCH_FIELDS = ['categories__course_set', 'privacy__shared_with']
 
@@ -236,15 +244,15 @@ class CoursesSerializer(serializers.ModelSerializer, QuerySerializerMixin):
         fields = (
         'id', 'image', 'title',
         'description', 'date_created',
-        'categories', 'price',
+        'categories', 'tags', 'price',
         'privacy', 'quiz',
-        'units_count', 'lectures_count', 'duration', 'progress', 'is_enrolled')
+        'units_count', 'lectures_count', 'duration', 'progress', 'is_enrolled', 'is_finished')
 
     def get_progress(self, course):
         user = self.context.get('request', None).user
-        content_viewed_count = course.activity.filter(user=user).count()
+        content_viewed_count = course.lectures_viewed_count
 
-        content_count = course.get_lectures_count()
+        content_count = course.lectures_count
         if not content_count:
             return 0.0
         return content_viewed_count/content_count*100
@@ -253,6 +261,13 @@ class CoursesSerializer(serializers.ModelSerializer, QuerySerializerMixin):
     def get_enrollment(self, course):
         user = self.context.get('request', None).user
         return CourseEnrollment.objects.filter(user=user, course=course).exists()
+
+    def get_activity_status(self, course):
+        user = self.context.get('request', None).user
+        return course.is_finished(user)
+
+    def format_lectures_duration(self, course):
+        return seconds_to_duration(course.duration)
 
 
 class CommentSerializer(serializers.ModelSerializer):

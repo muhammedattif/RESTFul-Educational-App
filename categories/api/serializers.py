@@ -12,6 +12,12 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = '__all__'
+
+
+class FullTagSerializer(serializers.ModelSerializer):
     number_of_courses = serializers.SerializerMethodField('get_number_of_courses')
     class Meta:
         model = Tag
