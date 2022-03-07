@@ -123,10 +123,30 @@ class CourseUnitsList(APIView, PageNumberPagination):
         if not utils.allowed_to_access_course(request.user, course):
             return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
+        # Sub query of lectures_queryset
+        topics_queryset = Topic.objects.filter(
+                                        unit=OuterRef(OuterRef(OuterRef('pk')))
+                                        ).values_list('pk')
+
+        # Sub query of course_activity_queryset
+        lectures_queryset = Content.objects.filter(
+                                        topic__in=topics_queryset
+                                        ).values_list('pk')
+
+        # Sub query of the main SQL query
+        course_activity_queryset = CourseActivity.objects.filter(
+                                                        course=course,
+                                                        user=request.user,
+                                                        content__in=lectures_queryset
+                                                        )
+
+        # Main SQL Query to execute
         units = course.units.all().annotate(
                                 lectures_count=Count('topics__content', distinct=True),
-                                lectures_duration=Sum('topics__content__duration', distinct=True)
+                                lectures_duration=Sum('topics__content__duration', distinct=True),
+                                num_of_lectures_viewed=general_utils.SQCount(Subquery(course_activity_queryset))
                                 )
+
         units = self.paginate_queryset(units, request, view=self)
         serializer = UnitSerializer(units, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
@@ -135,10 +155,30 @@ class CourseUnitsList(APIView, PageNumberPagination):
 class UnitDetail(APIView):
 
     def get(self, request, course_id, unit_id, format=None):
+
+        # Sub query of lectures_queryset
+        topics_queryset = Topic.objects.filter(
+                                        unit=OuterRef(OuterRef(OuterRef('pk')))
+                                        ).values_list('pk')
+
+        # Sub query of course_activity_queryset
+        lectures_queryset = Content.objects.filter(
+                                        topic__in=topics_queryset
+                                        ).values_list('pk')
+
+        # Sub query of the main SQL query
+        course_activity_queryset = CourseActivity.objects.filter(
+                                                        course=OuterRef('course'),
+                                                        user=request.user,
+                                                        content__in=lectures_queryset
+                                                        )
+
+        # Main SQL Query to execute
         unit = Unit.objects.annotate(
                                 lectures_count=Count('topics__content', distinct=True),
-                                lectures_duration=Sum('topics__content__duration', distinct=True)
-                                ).get(id=unit_id, course__id=course_id)
+                                lectures_duration=Sum('topics__content__duration', distinct=True),
+                                num_of_lectures_viewed=general_utils.SQCount(Subquery(course_activity_queryset))
+                            ).get(id=unit_id, course__id=course_id)
 
         serializer = UnitSerializer(unit, many=False, context={'request': request})
         return Response(serializer.data)
@@ -154,13 +194,30 @@ class TopicList(APIView, PageNumberPagination):
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
+
+        # Sub query of course_activity_queryset
+        lectures_queryset = Content.objects.filter(
+                                        topic=OuterRef(OuterRef('pk'))
+                                        ).values_list('pk')
+
+        # Sub query of the main SQL query
+        course_activity_queryset = CourseActivity.objects.filter(
+                                                    course=unit.course,
+                                                    user=request.user,
+                                                    content__in=lectures_queryset
+                                                    )
+
+        # Main SQL Query to execute
         topics = unit.topics.all().annotate(
                                     lectures_count=Count('content', distinct=True),
-                                    lectures_duration=Sum('content__duration', distinct=True)
+                                    lectures_duration=Sum('content__duration', distinct=True),
+                                    num_of_lectures_viewed=general_utils.SQCount(Subquery(course_activity_queryset))
                                     )
+
         topics = self.paginate_queryset(topics, request, view=self)
         serializer = TopicsListSerializer(topics, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
+
 
 class TopicDetail(APIView, PageNumberPagination):
 
@@ -174,6 +231,25 @@ class TopicDetail(APIView, PageNumberPagination):
         topic, found, error = utils.get_object(model=Topic, filter_kwargs=filter_kwargs)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        # Sub query of course_activity_queryset
+        lectures_queryset = Content.objects.filter(
+                                        topic=OuterRef(OuterRef('pk'))
+                                        ).values_list('pk')
+
+        # Sub query of the main SQL query
+        course_activity_queryset = CourseActivity.objects.filter(
+                                                    course=OuterRef('unit__course'),
+                                                    user=request.user,
+                                                    content__in=lectures_queryset
+                                                    )
+
+        # Main SQL Query to execute
+        topic = Topic.objects.annotate(
+                                    lectures_count=Count('content', distinct=True),
+                                    lectures_duration=Sum('content__duration', distinct=True),
+                                    num_of_lectures_viewed=general_utils.SQCount(Subquery(course_activity_queryset))
+                                    ).get(id=topic_id, unit__course__id=course_id, unit__id=unit_id)
 
         serializer = TopicDetailSerializer(topic, many=False, context={'request': request})
         return Response(serializer.data)

@@ -1,4 +1,10 @@
 import datetime
+from django.db.models import Subquery, IntegerField
+
+class SQCount(Subquery):
+    template = "(SELECT count(*) FROM (%(subquery)s) _count)"
+    output_field = IntegerField()
+
 
 def error(error_key):
     return {
