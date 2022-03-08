@@ -3,8 +3,8 @@ from rest_framework.fields import CurrentUserDefault
 from courses.models import (
 Course, Unit, Topic,
 CourseActivity,
-Content, CoursePrivacy,
-ContentPrivacy, Category,
+Lecture, CoursePrivacy,
+LecturePrivacy, Category,
 Quiz, QuizResult, Question, Choice,
 Attachement, Comment, Feedback
 )
@@ -79,9 +79,9 @@ class CoursePrivacySerializer(serializers.ModelSerializer):
         model = CoursePrivacy
         fields = '__all__'
 
-class ContentPrivacySerializer(serializers.ModelSerializer):
+class LecturePrivacySerializer(serializers.ModelSerializer):
     class Meta:
-        model = ContentPrivacy
+        model = LecturePrivacy
         fields = '__all__'
 
 class CourseActivitySerializer(serializers.ModelSerializer):
@@ -89,28 +89,28 @@ class CourseActivitySerializer(serializers.ModelSerializer):
         model = CourseActivity
         fields = '__all__'
 
-class DemoContentSerializer(serializers.ModelSerializer):
+class DemoLectureSerializer(serializers.ModelSerializer):
     viewed = serializers.BooleanField()
-    privacy = ContentPrivacySerializer(many=False, read_only=True)
+    privacy = LecturePrivacySerializer(many=False, read_only=True)
     class Meta:
-        model = Content
+        model = Lecture
         fields = ('id', 'title', 'order', 'topic', 'privacy', 'viewed', 'duration')
 
-    def is_viewed(self, content):
+    def is_viewed(self, lecture):
         user = self.context.get('request', None).user
-        return content.activity.filter(user=user).exists()
+        return lecture.activity.filter(user=user).exists()
 
-class FullContentSerializer(DemoContentSerializer):
+class FullLectureSerializer(DemoLectureSerializer):
     duration = serializers.SerializerMethodField('convert_duration')
     class Meta:
-        model = Content
+        model = Lecture
         fields = ('id', 'topic_id', 'title', 'video', 'audio', 'text', 'duration', 'order', 'privacy')
 
-    def convert_duration(self, content):
-        return seconds_to_duration(content.duration)
+    def convert_duration(self, lecture):
+        return seconds_to_duration(lecture.duration)
 
-    def get_course_id(self, content):
-        return content.course.id
+    def get_course_id(self, lecture):
+        return lecture.course.id
 
 class QuerySerializerMixin(object):
     PREFETCH_FIELDS = [] # Here is for M2M fields
@@ -208,12 +208,12 @@ class CourseSerializer(serializers.ModelSerializer, QuerySerializerMixin):
 
     def get_progress(self, course):
         user = self.context.get('request', None).user
-        content_viewed_count = course.lectures_viewed_count
+        lectures_viewed_count = course.lectures_viewed_count
 
-        content_count = course.lectures_count
-        if not content_count:
+        lectures_count = course.lectures_count
+        if not lectures_count:
             return 0.0
-        return content_viewed_count/content_count*100
+        return lectures_viewed_count/lectures_count*100
 
 
     def get_enrollment(self, course):
@@ -254,13 +254,12 @@ class CoursesSerializer(serializers.ModelSerializer, QuerySerializerMixin):
         'units_count', 'lectures_count', 'duration', 'progress', 'is_enrolled', 'is_finished')
 
     def get_progress(self, course):
-        user = self.context.get('request', None).user
-        content_viewed_count = course.lectures_viewed_count
+        lectures_viewed_count = course.lectures_viewed_count
 
-        content_count = course.lectures_count
-        if not content_count:
+        lectures_count = course.lectures_count
+        if not lectures_count:
             return 0.0
-        return content_viewed_count/content_count*100
+        return lectures_viewed_count/lectures_count*100
 
 
     def get_enrollment(self, course):

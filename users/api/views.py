@@ -50,7 +50,7 @@ class SignIn(APIView):
                 token.delete()
                 token, created = Token.objects.get_or_create(user=user)
 
-            content = {
+            response = {
                 'token': token.key,
                 'user_id': user.pk,
                 'email': user.email,
@@ -62,7 +62,7 @@ class SignIn(APIView):
                 'major': user.student_info.major
             }
 
-            return Response(content)
+            return Response(response)
         except:
             response = {}
             errors = serializer.errors

@@ -2,7 +2,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
 from django.db import transaction
-from .models import QuizAttempt, QuizResult, Content
+from .models import QuizAttempt, QuizResult, Lecture
 from moviepy.editor import VideoFileClip, AudioFileClip
 
 
@@ -19,7 +19,7 @@ def add_quiz_attempt(sender, instance=None, created=False, **kwargs):
         if instance.question == instance.quiz.questions.last():
             QuizAttempt.objects.create(user=instance.user, quiz=instance.quiz)
 
-@receiver(post_save, sender=Content)
+@receiver(post_save, sender=Lecture)
 def calculate_duration(sender, instance=None, created=False, **kwargs):
     if created:
         if instance.video:

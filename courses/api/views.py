@@ -5,13 +5,13 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .serializers import (
-CourseSerializer, CoursesSerializer, UnitSerializer, TopicsListSerializer, TopicDetailSerializer, UnitTopicsSerializer, DemoContentSerializer,
-FullContentSerializer, QuizSerializer,
+CourseSerializer, CoursesSerializer, UnitSerializer, TopicsListSerializer, TopicDetailSerializer, UnitTopicsSerializer, DemoLectureSerializer,
+FullLectureSerializer, QuizSerializer,
 QuizResultSerializer, AttachementSerializer,
 CommentSerializer, FeedbackSerializer,
 QuestionSerializer
 )
-from courses.models import Course, Unit, Topic, CourseActivity, Content, Comment, Feedback, Quiz, Question, Choice, QuizResult
+from courses.models import Course, Unit, Topic, CourseActivity, Lecture, Comment, Feedback, Quiz, Question, Choice, QuizResult
 from playlists.models import WatchHistory
 from functools import reduce
 import operator
@@ -32,9 +32,9 @@ class CourseList(ListAPIView):
         queryset = Course.objects.prefetch_related('tags', 'privacy__shared_with').select_related('privacy').annotate(
             units_count=Count('units', distinct=True)
         ).annotate(
-            lectures_count=Count('units__topics__content', distinct=True)
+            lectures_count=Count('units__topics__lectures', distinct=True)
         ).annotate(
-            duration=Sum('units__topics__content__duration', distinct=True)
+            duration=Sum('units__topics__lectures__duration', distinct=True)
         ).annotate(
             is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=self.request.user))
         ).annotate(
@@ -57,9 +57,9 @@ class FeaturedCoursesList(ListAPIView):
         queryset = Course.objects.prefetch_related('tags', 'privacy__shared_with').select_related('privacy').annotate(
             units_count=Count('units', distinct=True)
         ).annotate(
-            lectures_count=Count('units__topics__content', distinct=True)
+            lectures_count=Count('units__topics__lectures', distinct=True)
         ).annotate(
-            duration=Sum('units__topics__content__duration', distinct=True)
+            duration=Sum('units__topics__lectures__duration', distinct=True)
         ).annotate(
             is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=self.request.user))
         ).annotate(
@@ -79,9 +79,9 @@ class CourseDetail(APIView):
         ).annotate(
             units_count=Count('units', distinct=True)
         ).annotate(
-            lectures_count=Count('units__topics__content', distinct=True)
+            lectures_count=Count('units__topics__lectures', distinct=True)
         ).annotate(
-            duration=Sum('units__topics__content__duration', distinct=True)
+            duration=Sum('units__topics__lectures__duration', distinct=True)
         ).annotate(
             is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=request.user))
         ).annotate(
@@ -100,14 +100,14 @@ class LectureDetail(APIView):
         'topic__unit__id': unit_id,
         'topic__unit__course__id': course_id
         }
-        lecture, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs, prefetch_related=['quiz__questions__choices'])
+        lecture, found, error = utils.get_object(model=Lecture, filter_kwargs=filter_kwargs, prefetch_related=['quiz__questions__choices'])
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        if utils.allowed_to_access_content(request.user, lecture):
-            serializer = FullContentSerializer(lecture, many=False, context={'request': request})
+        if utils.allowed_to_access_lecture(request.user, lecture):
+            serializer = FullLectureSerializer(lecture, many=False, context={'request': request})
             watch_history, created = WatchHistory.objects.get_or_create(user=request.user)
-            watch_history.add_content(lecture)
+            watch_history.add_lecture(lecture)
             return Response(serializer.data)
 
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
@@ -129,7 +129,7 @@ class CourseUnitsList(APIView, PageNumberPagination):
                                         ).values_list('pk')
 
         # Sub query of course_activity_queryset
-        lectures_queryset = Content.objects.filter(
+        lectures_queryset = Lecture.objects.filter(
                                         topic__in=topics_queryset
                                         ).values_list('pk')
 
@@ -137,13 +137,13 @@ class CourseUnitsList(APIView, PageNumberPagination):
         course_activity_queryset = CourseActivity.objects.filter(
                                                         course=course,
                                                         user=request.user,
-                                                        content__in=lectures_queryset
+                                                        lecture__in=lectures_queryset
                                                         )
 
         # Main SQL Query to execute
         units = course.units.all().annotate(
-                                lectures_count=Count('topics__content', distinct=True),
-                                lectures_duration=Sum('topics__content__duration', distinct=True),
+                                lectures_count=Count('topics__lectures', distinct=True),
+                                lectures_duration=Sum('topics__lectures__duration', distinct=True),
                                 num_of_lectures_viewed=general_utils.SQCount(Subquery(course_activity_queryset))
                                 )
 
@@ -162,7 +162,7 @@ class UnitDetail(APIView):
                                         ).values_list('pk')
 
         # Sub query of course_activity_queryset
-        lectures_queryset = Content.objects.filter(
+        lectures_queryset = Lecture.objects.filter(
                                         topic__in=topics_queryset
                                         ).values_list('pk')
 
@@ -170,13 +170,13 @@ class UnitDetail(APIView):
         course_activity_queryset = CourseActivity.objects.filter(
                                                         course=OuterRef('course'),
                                                         user=request.user,
-                                                        content__in=lectures_queryset
+                                                        lecture__in=lectures_queryset
                                                         )
 
         # Main SQL Query to execute
         unit = Unit.objects.annotate(
-                                lectures_count=Count('topics__content', distinct=True),
-                                lectures_duration=Sum('topics__content__duration', distinct=True),
+                                lectures_count=Count('topics__lectures', distinct=True),
+                                lectures_duration=Sum('topics__lectures__duration', distinct=True),
                                 num_of_lectures_viewed=general_utils.SQCount(Subquery(course_activity_queryset))
                             ).get(id=unit_id, course__id=course_id)
 
@@ -196,7 +196,7 @@ class TopicList(APIView, PageNumberPagination):
 
 
         # Sub query of course_activity_queryset
-        lectures_queryset = Content.objects.filter(
+        lectures_queryset = Lecture.objects.filter(
                                         topic=OuterRef(OuterRef('pk'))
                                         ).values_list('pk')
 
@@ -204,13 +204,13 @@ class TopicList(APIView, PageNumberPagination):
         course_activity_queryset = CourseActivity.objects.filter(
                                                     course=unit.course,
                                                     user=request.user,
-                                                    content__in=lectures_queryset
+                                                    lecture__in=lectures_queryset
                                                     )
 
         # Main SQL Query to execute
         topics = unit.topics.all().annotate(
-                                    lectures_count=Count('content', distinct=True),
-                                    lectures_duration=Sum('content__duration', distinct=True),
+                                    lectures_count=Count('lectures', distinct=True),
+                                    lectures_duration=Sum('lectures__duration', distinct=True),
                                     num_of_lectures_viewed=general_utils.SQCount(Subquery(course_activity_queryset))
                                     )
 
@@ -233,7 +233,7 @@ class TopicDetail(APIView, PageNumberPagination):
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
         # Sub query of course_activity_queryset
-        lectures_queryset = Content.objects.filter(
+        lectures_queryset = Lecture.objects.filter(
                                         topic=OuterRef(OuterRef('pk'))
                                         ).values_list('pk')
 
@@ -241,13 +241,13 @@ class TopicDetail(APIView, PageNumberPagination):
         course_activity_queryset = CourseActivity.objects.filter(
                                                     course=OuterRef('unit__course'),
                                                     user=request.user,
-                                                    content__in=lectures_queryset
+                                                    lecture__in=lectures_queryset
                                                     )
 
         # Main SQL Query to execute
         topic = Topic.objects.annotate(
-                                    lectures_count=Count('content', distinct=True),
-                                    lectures_duration=Sum('content__duration', distinct=True),
+                                    lectures_count=Count('lectures', distinct=True),
+                                    lectures_duration=Sum('lectures__duration', distinct=True),
                                     num_of_lectures_viewed=general_utils.SQCount(Subquery(course_activity_queryset))
                                     ).get(id=topic_id, unit__course__id=course_id, unit__id=unit_id)
 
@@ -266,15 +266,15 @@ class LecturesList(APIView, PageNumberPagination):
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        content = topic.content.select_related('privacy').prefetch_related('privacy__shared_with').annotate(
+        lectures = topic.lectures.select_related('privacy').prefetch_related('privacy__shared_with').annotate(
                 viewed=Exists(
-                            CourseActivity.objects.filter(content=OuterRef('pk'), user=self.request.user
+                            CourseActivity.objects.filter(lecture=OuterRef('pk'), user=self.request.user
                             )
                 )
         ).all()
 
-        lectures = self.paginate_queryset(content, request, view=self)
-        serializer = DemoContentSerializer(lectures, many=True, context={'request': request})
+        lectures = self.paginate_queryset(lectures, request, view=self)
+        serializer = DemoLectureSerializer(lectures, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
 
 class QuizDetail(APIView):
@@ -293,11 +293,11 @@ class QuizDetail(APIView):
             'topic__unit__id': unit_id,
             'topic__unit__course__id': course_id
             }
-            lecture, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs, select_related=['quiz'])
+            lecture, found, error = utils.get_object(model=Lecture, filter_kwargs=filter_kwargs, select_related=['quiz'])
             if not found:
                 return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-            if not utils.allowed_to_access_content(request.user, lecture):
+            if not utils.allowed_to_access_lecture(request.user, lecture):
                 error = general_utils.error('access_denied')
                 return Response(error, status=status.HTTP_403_FORBIDDEN)
 
@@ -390,7 +390,7 @@ class LectureQuizAnswer(APIView):
         'topic__unit__id': unit_id,
         'topic__unit__course__id': course_id
         }
-        lecture, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs, select_related=['quiz'])
+        lecture, found, error = utils.get_object(model=Lecture, filter_kwargs=filter_kwargs, select_related=['quiz'])
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
@@ -444,7 +444,7 @@ class LectureQuizResult(APIView):
         'topic__unit__id': unit_id,
         'topic__unit__course__id': course_id
         }
-        lecture, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs)
+        lecture, found, error = utils.get_object(model=Lecture, filter_kwargs=filter_kwargs)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
@@ -479,11 +479,11 @@ class LectureAttachement(APIView):
         'topic__unit__id': unit_id,
         'topic__unit__course__id': course_id
         }
-        lecture, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs)
+        lecture, found, error = utils.get_object(model=Lecture, filter_kwargs=filter_kwargs)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        if utils.allowed_to_access_content(request.user, lecture):
+        if utils.allowed_to_access_lecture(request.user, lecture):
             attachments = lecture.attachments.all()
             serializer = AttachementSerializer(attachments, many=True, context={'request': request})
             return Response(serializer.data)
@@ -529,11 +529,11 @@ class LectureComments(APIView):
         'topic__unit__id': unit_id,
         'topic__unit__course__id': course_id
         }
-        lecture, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs, prefetch_related=['privacy'])
+        lecture, found, error = utils.get_object(model=Lecture, filter_kwargs=filter_kwargs, prefetch_related=['privacy'])
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        if utils.allowed_to_access_content(request.user, lecture):
+        if utils.allowed_to_access_lecture(request.user, lecture):
             comments = lecture.comments
             serializer = CommentSerializer(comments, many=True, context={'request': request})
             return Response(serializer.data)
@@ -547,13 +547,13 @@ class LectureComments(APIView):
         'topic__unit__id': unit_id,
         'topic__unit__course__id': course_id
         }
-        lecture, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs)
+        lecture, found, error = utils.get_object(model=Lecture, filter_kwargs=filter_kwargs)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        if utils.allowed_to_access_content(request.user, lecture):
+        if utils.allowed_to_access_lecture(request.user, lecture):
             comment_body = request.data['comment_body']
-            comment = Comment.objects.create(user=request.user, course=lecture.topic.unit.course, content=lecture, comment_body=comment_body)
+            comment = Comment.objects.create(user=request.user, course=lecture.topic.unit.course, lecture=lecture, comment_body=comment_body)
             serializer = CommentSerializer(comment, many=False, context={'request': request})
             return Response(serializer.data)
 
@@ -607,16 +607,16 @@ class TrackCourseActivity(APIView):
         'topic__unit__id': unit_id,
         'topic__unit__course__id': course_id
         }
-        lecture, found, error = utils.get_object(model=Content, filter_kwargs=filter_kwargs)
+        lecture, found, error = utils.get_object(model=Lecture, filter_kwargs=filter_kwargs)
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
         if utils.is_enrolled(request.user, lecture.topic.unit.course):
-            CourseActivity.objects.get_or_create(user=request.user, course=lecture.topic.unit.course, content=lecture)
+            CourseActivity.objects.get_or_create(user=request.user, course=lecture.topic.unit.course, lecture=lecture)
             response = {
                 'status': 'success',
                 'message': 'Checked!',
-                'success_description': 'This content Marked ad read.'
+                'success_description': 'This Lecture Marked ad read.'
             }
             return Response(response, status=status.HTTP_403_FORBIDDEN)
 

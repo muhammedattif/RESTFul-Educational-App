@@ -4,8 +4,8 @@ from nested_inline.admin import NestedStackedInline, NestedModelAdmin
 from courses.models import (
 Course, CoursePrivacy,
 CourseAttachement,
-ContentAttachement,
-Content, ContentPrivacy,
+LectureAttachement,
+Lecture, LecturePrivacy,
 CourseActivity,
 Comment,
 Feedback,
@@ -33,7 +33,7 @@ class UnitTopicsInline(NestedStackedInline):
 
 class CourseUnitsInline(NestedStackedInline):
     model = Unit
-    can_delete = False
+    can_delete = True
     extra = 2
     verbose_name_plural = 'Units'
     fk_name = 'course'
@@ -76,32 +76,31 @@ class CourseConfig(NestedModelAdmin):
 
 admin.site.register(Course, CourseConfig)
 
-###### Course Content
-class ContentAttachementsInline(NestedStackedInline):
-    model = ContentAttachement
+class LectureAttachementsInline(NestedStackedInline):
+    model = LectureAttachement
     can_delete = True
     verbose_name_plural = 'Attachements'
-    fk_name = 'content'
+    fk_name = 'lecture'
 
-class ContentPrivacyInline(NestedStackedInline):
-    model = ContentPrivacy
+class LecturePrivacyInline(NestedStackedInline):
+    model = LecturePrivacy
     can_delete = False
     verbose_name_plural = 'Privacy'
-    fk_name = 'content'
+    fk_name = 'lecture'
 
-class ContentConfig(NestedModelAdmin):
-    model = Content
+class LectureConfig(NestedModelAdmin):
+    model = Lecture
 
     list_filter = ('topic', )
     list_display = ('topic', 'title')
 
     fieldsets = (
-        ("Content Information", {'fields': ('title', 'description', 'topic', 'video', 'audio', 'text', 'duration', 'order', 'quiz')}),
+        ("Lecture Information", {'fields': ('title', 'description', 'topic', 'video', 'audio', 'text', 'duration', 'order', 'quiz')}),
     )
 
-    inlines = [ContentPrivacyInline, ContentAttachementsInline]
+    inlines = [LecturePrivacyInline, LectureAttachementsInline]
 
-admin.site.register(Content, ContentConfig)
+admin.site.register(Lecture, LectureConfig)
 admin.site.register(CourseActivity)
 
 class CommentConfig(NestedModelAdmin):

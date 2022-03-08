@@ -100,17 +100,17 @@ class Course(models.Model):
         return self.units.count()
 
     def get_lectures_count(self):
-        return self.units.aggregate(count=Count('topics__content'))['count']
+        return self.units.aggregate(count=Count('topics__lectures'))['count']
 
     def get_lectures_duration(self):
-        duration = self.units.aggregate(sum=Sum('topics__content__duration'))['sum']
+        duration = self.units.aggregate(sum=Sum('topics__lectures__duration'))['sum']
         if not duration:
             duration = 0
         return seconds_to_duration(duration)
 
     def is_finished(self, user):
-        lectures = Content.objects.filter(topic__unit__course=self)
-        activity = self.activity.filter(user=user, content__in=lectures).count()
+        lectures = Lecture.objects.filter(topic__unit__course=self)
+        activity = self.activity.filter(user=user, lecture__in=lectures).count()
         return len(lectures) == activity
 
     @property
@@ -133,10 +133,10 @@ class Unit(models.Model):
         return self.topics.count()
 
     def get_lectures_count(self):
-        return self.topics.aggregate(count=Count('content'))['count']
+        return self.topics.aggregate(count=Count('lectures'))['count']
 
     def get_lectures_duration(self):
-        duration = self.topics.aggregate(sum=Sum('content__duration'))['sum']
+        duration = self.topics.aggregate(sum=Sum('lectures__duration'))['sum']
 
         if not duration:
             duration = 0
@@ -144,8 +144,8 @@ class Unit(models.Model):
 
     def is_finished(self, user):
         topics_ids = self.topics.all().values_list('id', flat=True)
-        lectures = Content.objects.filter(topic__in=topics_ids)
-        activity = self.course.activity.filter(user=user, content__in=lectures).count()
+        lectures = Lecture.objects.filter(topic__in=topics_ids)
+        activity = self.course.activity.filter(user=user, lecture__in=lectures).count()
         return len(lectures) == activity
 
 class Topic(models.Model):
@@ -160,23 +160,23 @@ class Topic(models.Model):
         return self.title
 
     def get_lectures_count(self):
-        return self.content.count()
+        return self.lectures.count()
 
     def get_lectures_duration(self):
-        duration = self.content.aggregate(sum=Sum('duration'))['sum']
+        duration = self.lectures.aggregate(sum=Sum('duration'))['sum']
 
         if not duration:
             duration = 0
         return seconds_to_duration(duration)
 
     def is_finished(self, user):
-        lectures = self.content.all()
-        activity = self.unit.course.activity.filter(user=user, content__in=lectures).count()
+        lectures = self.lectures.all()
+        activity = self.unit.course.activity.filter(user=user, lecture__in=lectures).count()
         return len(lectures) == activity
 
-######### Topic Content section
-class Content(models.Model):
-    topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="content")
+######### Topic Lecture section
+class Lecture(models.Model):
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="lectures")
     title = models.CharField(max_length=100)
     description = models.TextField()
     video = models.FileField(upload_to='video', blank=True, null=True)
@@ -193,7 +193,7 @@ class Content(models.Model):
           return self.title
 
     def atomic_post_save(self, sender, created, **kwargs):
-        ContentPrivacy.objects.get_or_create(content=self)
+        LecturePrivacy.objects.get_or_create(lecture=self)
 
     def can_access(self, user):
         if self.privacy.is_public():
@@ -213,13 +213,13 @@ class Content(models.Model):
 class CourseActivity(models.Model):
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='course_activity')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='activity')
-    content = models.ForeignKey(Content, on_delete=models.CASCADE, related_name='activity')
+    lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name='activity')
 
     class Meta:
         verbose_name_plural = 'Courses Activity Tracker'
 
     def __str__(self):
-          return f'{self.user.email}-{self.course.title}-{self.content.title}'
+          return f'{self.user.email}-{self.course.title}-{self.lecture.title}'
 
 
 #### Comments and feedback section
@@ -236,7 +236,7 @@ class Comment(models.Model):
 
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name="comments")
 
-    choices = Q(app_label = 'courses', model = 'course') | Q(app_label = 'courses', model = 'content')
+    choices = Q(app_label = 'courses', model = 'course') | Q(app_label = 'courses', model = 'lecture')
 
     object_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to=choices, related_name='comments')
     object_id = models.PositiveIntegerField()
@@ -282,23 +282,23 @@ class Feedback(models.Model):
 class CorrectInfo(models.Model):
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    content = models.ForeignKey(Content, on_delete=models.CASCADE)
+    lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE)
     min_from = models.CharField(blank=True, max_length=100)
     min_to = models.CharField(blank=True, max_length=100)
     scientific_evidence = models.TextField(blank=True)
 
     def __str__(self):
-          return f'{self.user.email}-{self.course.title}-{self.content.title}'
+          return f'{self.user.email}-{self.course.title}-{self.lecture.title}'
 
 
 class Report(models.Model):
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    content = models.ForeignKey(Content, on_delete=models.CASCADE)
+    lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE)
     description = models.TextField()
 
     def __str__(self):
-          return f'{self.user.email}-{self.course.title}-{self.content.title}'
+          return f'{self.user.email}-{self.course.title}-{self.lecture.title}'
 
 
 ## Privacy section
@@ -332,12 +332,12 @@ class CoursePrivacy(Privacy):
           return self.course.title
 
 
-class ContentPrivacy(Privacy):
+class LecturePrivacy(Privacy):
 
-    content = models.OneToOneField(Content, on_delete=models.CASCADE, blank=True, related_name="privacy")
+    lecture = models.OneToOneField(Lecture, on_delete=models.CASCADE, blank=True, related_name="privacy")
 
     def __str__(self):
-          return self.content.title
+          return self.lecture.title
 
 # Attachments section
 class Attachement(models.Model):
@@ -350,7 +350,7 @@ class CourseAttachement(Attachement):
     def __str__(self):
           return self.course.title
 
-class ContentAttachement(Attachement):
-    content = models.ForeignKey(Content, on_delete=models.CASCADE, related_name="attachments")
+class LectureAttachement(Attachement):
+    lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name="attachments")
     def __str__(self):
-          return self.content.title
+          return self.lecture.title

@@ -1,4 +1,4 @@
-from .models import Content, Course, Unit, Topic
+from .models import Lecture, Course, Unit, Topic
 import alteby.utils as general_utils
 
 def get_course(course_id, prefetch_related=None, select_related=None):
@@ -12,20 +12,20 @@ def get_course(course_id, prefetch_related=None, select_related=None):
     except Course.DoesNotExist:
         return None, False, general_utils.error('not_found')
 
-def get_content(content_id, course_id=None, prefetch_related=None, select_related=None):
+def get_lecture(lecture_id, course_id=None, prefetch_related=None, select_related=None):
     try:
-        query = Content.objects
+        query = Lecture.objects
         if prefetch_related:
             query = query.prefetch_related(*prefetch_related)
         if select_related:
             query = query.select_related(*select_related)
         if course_id:
-            query = query.get(id=content_id, course_id=course_id)
+            query = query.get(id=lecture_id, course_id=course_id)
         else:
-            query = query.get(id=content_id)
+            query = query.get(id=lecture_id)
 
         return query, True, None
-    except Content.DoesNotExist:
+    except Lecture.DoesNotExist:
         return None, False, general_utils.error('not_found')
 
 def get_unit(filter_kwargs, prefetch_related=None, select_related=None):
@@ -51,8 +51,8 @@ def get_object(model, filter_kwargs, prefetch_related=None, select_related=None)
     except model.DoesNotExist:
         return None, False, general_utils.error('not_found')
 
-def allowed_to_access_content(user, content):
-    if content.can_access(user) or is_enrolled(user, content.topic.unit.course):
+def allowed_to_access_lecture(user, lecture):
+    if lecture.can_access(user) or is_enrolled(user, lecture.topic.unit.course):
         return True
     return False
 

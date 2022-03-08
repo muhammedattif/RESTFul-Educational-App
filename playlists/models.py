@@ -1,27 +1,27 @@
 from django.db import models
 from django.conf import settings
-from courses.models import Content
+from courses.models import Lecture
 
 UserModel = settings.AUTH_USER_MODEL
 
 class Favorite(models.Model):
     owner = models.OneToOneField(UserModel, on_delete=models.CASCADE, related_name="favorites")
-    content = models.ManyToManyField(Content, blank=True)
+    lecture = models.ManyToManyField(Lecture, blank=True)
 
     def __str__(self):
           return self.owner.email
 
-    def add(self, content):
-        self.content.add(content)
+    def add(self, lecture):
+        self.lectures.add(lecture)
 
-    def remove(self, content):
-        self.content.remove(content)
+    def remove(self, lecture):
+        self.lectures.remove(lecture)
 
 # Playlist Model
 class Playlist(models.Model):
     owner = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name="Playlists")
     name = models.CharField(max_length=20, unique=True)
-    content = models.ManyToManyField(Content, blank=True)
+    lecture = models.ManyToManyField(Lecture, blank=True)
 
     class Meta:
         unique_together = (("owner", "name"),)
@@ -29,16 +29,16 @@ class Playlist(models.Model):
     def __str__(self):
           return f'{self.owner.email}-{self.name}'
 
-    def add(self, content):
-        self.content.add(content)
+    def add(self, lecture):
+        self.lectures.add(lecture)
 
-    def remove(self, content):
-        self.content.remove(content)
+    def remove(self, lecture):
+        self.lectures.remove(lecture)
 
 # Watch History
 class WatchHistory(models.Model):
     user = models.OneToOneField(UserModel, on_delete=models.CASCADE, related_name="watch_history")
-    contents = models.ManyToManyField(Content, blank=True)
+    lectures = models.ManyToManyField(Lecture, blank=True)
 
     class Meta:
         verbose_name_plural = 'Watch history'
@@ -46,6 +46,6 @@ class WatchHistory(models.Model):
     def __str__(self):
           return f'{self.user.email}-Watch History'
 
-    def add_content(self, content):
-        self.contents.add(content)
+    def add_lecture(self, lecture):
+        self.lectures.add(lecture)
         self.save()
