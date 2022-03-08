@@ -106,7 +106,7 @@ class Course(models.Model):
         duration = self.units.aggregate(sum=Sum('topics__lectures__duration'))['sum']
         if not duration:
             duration = 0
-        return seconds_to_duration(duration)
+        return duration
 
     def is_finished(self, user):
         lectures = Lecture.objects.filter(topic__unit__course=self)
@@ -140,7 +140,7 @@ class Unit(models.Model):
 
         if not duration:
             duration = 0
-        return seconds_to_duration(duration)
+        return duration
 
     def is_finished(self, user):
         topics_ids = self.topics.all().values_list('id', flat=True)
@@ -167,7 +167,7 @@ class Topic(models.Model):
 
         if not duration:
             duration = 0
-        return seconds_to_duration(duration)
+        return duration
 
     def is_finished(self, user):
         lectures = self.lectures.all()

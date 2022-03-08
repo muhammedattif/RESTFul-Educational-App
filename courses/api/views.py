@@ -30,14 +30,10 @@ class CourseList(ListAPIView):
     def get_queryset(self):
         request_params = self.request.GET
         queryset = Course.objects.prefetch_related('tags', 'privacy__shared_with').select_related('privacy').annotate(
-            units_count=Count('units', distinct=True)
-        ).annotate(
-            lectures_count=Count('units__topics__lectures', distinct=True)
-        ).annotate(
-            duration=Sum('units__topics__lectures__duration', distinct=True)
-        ).annotate(
-            is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=self.request.user))
-        ).annotate(
+            units_count=Count('units', distinct=True),
+            lectures_count=Count('units__topics__lectures', distinct=True),
+            course_duration=Sum('units__topics__lectures__duration', distinct=True),
+            is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=self.request.user)),
             lectures_viewed_count=Count('activity', filter=Q(activity__user=self.request.user), distinct=True)
         ).all()
 
@@ -74,17 +70,13 @@ class CourseDetail(APIView):
 
     def get(self, request, course_id, format=None):
 
-        course = Course.objects.prefetch_related('privacy__shared_with').select_related('privacy').filter(
+        course = Course.objects.prefetch_related('privacy__shared_with', 'categories__course_set').select_related('privacy').filter(
             id=course_id
         ).annotate(
-            units_count=Count('units', distinct=True)
-        ).annotate(
-            lectures_count=Count('units__topics__lectures', distinct=True)
-        ).annotate(
-            duration=Sum('units__topics__lectures__duration', distinct=True)
-        ).annotate(
-            is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=request.user))
-        ).annotate(
+            units_count=Count('units', distinct=True),
+            lectures_count=Count('units__topics__lectures', distinct=True),
+            course_duration=Sum('units__topics__lectures__duration', distinct=True),
+            is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=request.user)),
             lectures_viewed_count=Count('activity', filter=Q(activity__user=request.user), distinct=True)
         ).get(id=course_id)
 
