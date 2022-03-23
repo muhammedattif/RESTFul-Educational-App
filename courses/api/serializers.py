@@ -12,7 +12,6 @@ from alteby.utils import seconds_to_duration
 from categories.api.serializers import CategorySerializer, TagSerializer
 from django.db.models import Sum
 from payment.models import CourseEnrollment
-from alteby.utils import seconds_to_duration
 
 
 class FeedbackSerializer(serializers.ModelSerializer):
