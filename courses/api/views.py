@@ -20,8 +20,8 @@ import alteby.utils as general_utils
 from django.db import IntegrityError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from django.db import transaction
-
-from django.db.models import Prefetch, Count, Sum, OuterRef, Exists, Subquery, IntegerField, Q
+from django.db.models.functions import Coalesce
+from django.db.models import Prefetch, Count, Sum, OuterRef, Exists, Subquery, IntegerField, Q, FloatField
 from payment.models import CourseEnrollment
 
 class CourseList(ListAPIView):
@@ -29,10 +29,11 @@ class CourseList(ListAPIView):
 
     def get_queryset(self):
         request_params = self.request.GET
+        course_duration_queryset = Unit.objects.filter(course=OuterRef('pk')).annotate(duration_sum=Sum('topics__lectures__duration')).values('duration_sum')[:1]
         queryset = Course.objects.prefetch_related('tags', 'privacy__shared_with').select_related('privacy').annotate(
             units_count=Count('units', distinct=True),
             lectures_count=Count('units__topics__lectures', distinct=True),
-            course_duration=Sum('units__topics__lectures__duration'),
+            course_duration=Coalesce(Subquery(course_duration_queryset), 0, output_field=FloatField()),
             is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=self.request.user)),
             lectures_viewed_count=Count('activity', filter=Q(activity__user=self.request.user), distinct=True)
         ).all()
@@ -50,10 +51,11 @@ class FeaturedCoursesList(ListAPIView):
     serializer_class = CourseSerializer
 
     def get_queryset(self):
+        course_duration_queryset = Unit.objects.filter(course=OuterRef('pk')).annotate(duration_sum=Sum('topics__lectures__duration')).values('duration_sum')[:1]
         queryset = Course.objects.prefetch_related('tags', 'privacy__shared_with').select_related('privacy').annotate(
             units_count=Count('units', distinct=True),
             lectures_count=Count('units__topics__lectures', distinct=True),
-            course_duration=Subquery(Unit.objects.filter(course=OuterRef('pk')).annotate(duration_sum=Sum('topics__lectures__duration')).values('duration_sum')[:1]),
+            course_duration=Coalesce(Subquery(course_duration_queryset), 0, output_field=FloatField()),
             is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=self.request.user)),
             lectures_viewed_count=Count('activity', filter=Q(activity__user=self.request.user), distinct=True)
         ).filter(featured=True)
@@ -66,12 +68,13 @@ class CourseDetail(APIView):
 
     def get(self, request, course_id, format=None):
 
+        course_duration_queryset = Unit.objects.filter(course=OuterRef('pk')).annotate(duration_sum=Sum('topics__lectures__duration')).values('duration_sum')[:1]
         course = Course.objects.prefetch_related('privacy__shared_with', 'categories__course_set').select_related('privacy').filter(
             id=course_id
         ).annotate(
             units_count=Count('units', distinct=True),
             lectures_count=Count('units__topics__lectures', distinct=True),
-            course_duration=Subquery(Unit.objects.filter(course=OuterRef('pk')).annotate(duration_sum=Sum('topics__lectures__duration')).values('duration_sum')[:1]),
+            course_duration=Coalesce(Subquery(course_duration_queryset), 0, output_field=FloatField()),
             is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=request.user)),
             lectures_viewed_count=Count('activity', filter=Q(activity__user=request.user), distinct=True)
         ).get(id=course_id)
@@ -111,6 +114,8 @@ class CourseUnitsList(APIView, PageNumberPagination):
         if not utils.allowed_to_access_course(request.user, course):
             return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
 
+        lectures_duration_queryset = Topic.objects.filter(unit=OuterRef('pk')).annotate(duration_sum=Sum('lectures__duration')).values('duration_sum')[:1]
+
         # Sub query of lectures_queryset
         topics_queryset = Topic.objects.filter(
                                         unit=OuterRef(OuterRef(OuterRef('pk')))
@@ -131,7 +136,7 @@ class CourseUnitsList(APIView, PageNumberPagination):
         # Main SQL Query to execute
         units = course.units.all().annotate(
                                 lectures_count=Count('topics__lectures', distinct=True),
-                                lectures_duration=Subquery(Topic.objects.filter(unit=OuterRef('pk')).annotate(duration_sum=Sum('lectures__duration')).values('duration_sum')[:1]),
+                                lectures_duration=Coalesce(Subquery(lectures_duration_queryset), 0, output_field=FloatField()),
                                 num_of_lectures_viewed=general_utils.SQCount(Subquery(course_activity_queryset))
                                 )
 
@@ -143,6 +148,8 @@ class CourseUnitsList(APIView, PageNumberPagination):
 class UnitDetail(APIView):
 
     def get(self, request, course_id, unit_id, format=None):
+
+        lectures_duration_queryset = Topic.objects.filter(unit=OuterRef('pk')).annotate(duration_sum=Sum('lectures__duration')).values('duration_sum')[:1]
 
         # Sub query of lectures_queryset
         topics_queryset = Topic.objects.filter(
@@ -164,7 +171,7 @@ class UnitDetail(APIView):
         # Main SQL Query to execute
         unit = Unit.objects.annotate(
                                 lectures_count=Count('topics__lectures', distinct=True),
-                                lectures_duration=Subquery(Topic.objects.filter(unit=OuterRef('pk')).annotate(duration_sum=Sum('lectures__duration')).values('duration_sum')[:1]),
+                                lectures_duration=Coalesce(Subquery(lectures_duration_queryset), 0, output_field=FloatField()),
                                 num_of_lectures_viewed=general_utils.SQCount(Subquery(course_activity_queryset))
                             ).get(id=unit_id, course__id=course_id)
 
@@ -198,7 +205,7 @@ class TopicList(APIView, PageNumberPagination):
         # Main SQL Query to execute
         topics = unit.topics.all().annotate(
                                     lectures_count=Count('lectures', distinct=True),
-                                    lectures_duration=Sum('lectures__duration'),
+                                    lectures_duration=Coalesce(Sum('lectures__duration'), 0, output_field=FloatField()),
                                     num_of_lectures_viewed=general_utils.SQCount(Subquery(course_activity_queryset))
                                     )
 
@@ -235,7 +242,7 @@ class TopicDetail(APIView, PageNumberPagination):
         # Main SQL Query to execute
         topic = Topic.objects.annotate(
                                     lectures_count=Count('lectures', distinct=True),
-                                    lectures_duration=Sum('lectures__duration'),
+                                    lectures_duration=Coalesce(Sum('lectures__duration'), 0, output_field=FloatField()),
                                     num_of_lectures_viewed=general_utils.SQCount(Subquery(course_activity_queryset))
                                     ).get(id=topic_id, unit__course__id=course_id, unit__id=unit_id)
 
