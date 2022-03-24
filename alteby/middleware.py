@@ -31,4 +31,4 @@ class CoursePermissionMiddleware(MiddlewareMixin):
                     if not found:
                         return JsonResponse(error, status=404)
                     if not allowed_to_access_course(request.user, course):
-                        return JsonResponse(general_utils.error('access_denied'), status=401)
+                        return JsonResponse(general_utils.error('access_denied'), status=403)

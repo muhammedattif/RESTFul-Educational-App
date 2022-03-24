@@ -127,7 +127,7 @@ class QuerySerializerMixin(object):
 
 class TopicsListSerializer(serializers.ModelSerializer):
     lectures_count = serializers.IntegerField()
-    lectures_duration = serializers.FloatField()
+    lectures_duration = serializers.SerializerMethodField('get_duration')
     is_finished = serializers.SerializerMethodField('get_activity_status')
 
     class Meta:
@@ -135,7 +135,14 @@ class TopicsListSerializer(serializers.ModelSerializer):
         fields =('id', 'title', 'unit', 'lectures_count', 'lectures_duration', 'is_finished', 'order')
 
     def get_activity_status(self, topic):
+        if not topic.lectures_count:
+            return False
         return topic.lectures_count == topic.num_of_lectures_viewed
+
+    def get_duration(self, topic):
+        if not topic.lectures_duration:
+            return 0
+        return topic.lectures_duration
 
     def format_lectures_duration(self, topic):
         return seconds_to_duration(topic.lectures_duration)
@@ -143,22 +150,29 @@ class TopicsListSerializer(serializers.ModelSerializer):
 
 class TopicDetailSerializer(serializers.ModelSerializer):
     lectures_count = serializers.IntegerField()
-    lectures_duration = serializers.FloatField()
+    lectures_duration = serializers.SerializerMethodField('get_duration')
     is_finished = serializers.SerializerMethodField('get_activity_status')
 
     class Meta:
         model = Topic
         fields =('id', 'title', 'unit', 'lectures_count', 'lectures_duration', 'is_finished', 'order')
 
-    def get_activity_status(self, unit):
-        return unit.lectures_count == unit.num_of_lectures_viewed
+    def get_activity_status(self, topic):
+        if not topic.lectures_count:
+            return False
+        return topic.lectures_count == topic.num_of_lectures_viewed
 
-    def format_lectures_duration(self, unit):
-        return seconds_to_duration(unit.lectures_duration)
+    def get_duration(self, topic):
+        if not topic.lectures_duration:
+            return 0
+        return topic.lectures_duration
+
+    def format_lectures_duration(self, topic):
+        return seconds_to_duration(topic.lectures_duration)
 
 class UnitSerializer(serializers.ModelSerializer):
     lectures_count = serializers.IntegerField()
-    lectures_duration = serializers.FloatField()
+    lectures_duration = serializers.SerializerMethodField('get_duration')
     is_finished = serializers.SerializerMethodField('get_activity_status')
 
     class Meta:
@@ -166,7 +180,14 @@ class UnitSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'course', 'order', 'lectures_duration', 'lectures_count', 'is_finished')
 
     def get_activity_status(self, unit):
+        if not unit.lectures_count:
+            return False
         return unit.lectures_count == unit.num_of_lectures_viewed
+
+    def get_duration(self, unit):
+        if not unit.lectures_duration:
+            return 0
+        return unit.lectures_duration
 
     def format_lectures_duration(self, unit):
         return seconds_to_duration(unit.lectures_duration)
@@ -188,7 +209,7 @@ class CourseSerializer(serializers.ModelSerializer, QuerySerializerMixin):
     # Flag: this field hits the DB
     is_finished = serializers.SerializerMethodField('get_activity_status')
 
-    course_duration = serializers.FloatField()
+    course_duration = serializers.SerializerMethodField('get_duration')
     privacy = CoursePrivacySerializer(many=False, read_only=True)
     categories = CategorySerializer(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
@@ -212,12 +233,18 @@ class CourseSerializer(serializers.ModelSerializer, QuerySerializerMixin):
             return 0.0
         return lectures_viewed_count/lectures_count*100
 
+    def get_duration(self, course):
+        if not course.course_duration:
+            return 0
+        return course.course_duration
 
     def get_enrollment(self, course):
         user = self.context.get('request', None).user
         return CourseEnrollment.objects.filter(user=user, course=course).exists()
 
     def get_activity_status(self, course):
+        if not course.lectures_count:
+            return False
         return course.lectures_count == course.lectures_viewed_count
 
     def format_lectures_duration(self, course):
@@ -233,7 +260,7 @@ class CoursesSerializer(serializers.ModelSerializer, QuerySerializerMixin):
     # Flag: this field hits the DB
     is_finished = serializers.SerializerMethodField('get_activity_status')
 
-    course_duration = serializers.FloatField()
+    course_duration = serializers.SerializerMethodField('get_duration')
     privacy = CoursePrivacySerializer(many=False, read_only=True)
     categories = CategorySerializer(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
@@ -257,12 +284,18 @@ class CoursesSerializer(serializers.ModelSerializer, QuerySerializerMixin):
             return 0.0
         return lectures_viewed_count/lectures_count*100
 
+    def get_duration(self, course):
+        if not course.course_duration:
+            return 0
+        return course.course_duration
 
     def get_enrollment(self, course):
         user = self.context.get('request', None).user
         return CourseEnrollment.objects.filter(user=user, course=course).exists()
 
     def get_activity_status(self, course):
+        if not course.lectures_count:
+            return False
         return course.lectures_count == course.lectures_viewed_count
 
     def format_lectures_duration(self, course):
