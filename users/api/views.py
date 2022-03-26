@@ -3,7 +3,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
-from rest_framework.generics import RetrieveAPIView, UpdateAPIView
+from rest_framework.generics import UpdateAPIView
 from rest_framework import renderers
 from rest_framework import parsers
 from rest_framework.authtoken import views as auth_views
@@ -14,7 +14,7 @@ from .serializers import AuthTokenSerializer, SignUpSerializer, StudentSerialize
 from django.core.exceptions import ValidationError
 from users.models import Student
 from courses.api.serializers import CourseSerializer
-from courses.models import Course
+from courses.models import Course, Unit
 from users.models import User
 from rest_framework.permissions import IsAuthenticated
 from django_rest_passwordreset.views import ResetPasswordConfirm
@@ -27,6 +27,10 @@ from django.conf import settings
 from django.shortcuts import render
 from rest_framework.pagination import PageNumberPagination
 from django.contrib.auth import login
+from django.db.models import Prefetch, Count, Sum, OuterRef, Exists, Subquery, IntegerField, Q, FloatField
+from django.db.models.functions import Coalesce
+
+from payment.models import CourseEnrollment
 
 class SignIn(APIView):
     throttle_classes = ()
@@ -201,8 +205,18 @@ class ProfileDetail(APIView):
 class EnrolledCourses(APIView, PageNumberPagination):
 
     def get(self, request, user_id):
+
         courses_ids = request.user.enrollments.values_list('course', flat=True)
-        courses = Course.objects.filter(id__in=courses_ids)
+
+        course_duration_queryset = Unit.objects.filter(course=OuterRef('pk')).annotate(duration_sum=Sum('topics__lectures__duration')).values('duration_sum')[:1]
+        courses = Course.objects.prefetch_related('tags', 'privacy__shared_with').select_related('privacy').annotate(
+            units_count=Count('units', distinct=True),
+            lectures_count=Count('units__topics__lectures', distinct=True),
+            course_duration=Coalesce(Subquery(course_duration_queryset), 0, output_field=FloatField()),
+            is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=self.request.user)),
+            lectures_viewed_count=Count('activity', filter=Q(activity__user=self.request.user), distinct=True)
+        ).filter(id__in=courses_ids)
+
         courses = self.paginate_queryset(courses, request, view=self)
 
         serializer = CourseSerializer(courses, many=True, context={'request':request})
