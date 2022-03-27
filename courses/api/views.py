@@ -23,6 +23,7 @@ from django.db import transaction
 from django.db.models.functions import Coalesce
 from django.db.models import Prefetch, Count, Sum, OuterRef, Exists, Subquery, IntegerField, Q, FloatField
 from payment.models import CourseEnrollment
+from .swagger_schema import course_detail_swagger_schema
 
 class CourseList(ListAPIView):
     serializer_class = CoursesSerializer
@@ -66,6 +67,7 @@ class FeaturedCoursesList(ListAPIView):
 
 class CourseDetail(APIView):
 
+    @course_detail_swagger_schema
     def get(self, request, course_id, format=None):
 
         course_duration_queryset = Unit.objects.filter(course=OuterRef('pk')).annotate(duration_sum=Sum('topics__lectures__duration')).values('duration_sum')[:1]
