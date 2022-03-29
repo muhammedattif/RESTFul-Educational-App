@@ -142,7 +142,7 @@ class DemoLectureSerializer(serializers.ModelSerializer):
     privacy = LecturePrivacySerializer(many=False, read_only=True)
     class Meta:
         model = Lecture
-        fields = ('id', 'title', 'order', 'topic', 'privacy', 'viewed', 'duration')
+        fields = ('id', 'title', 'description', 'order', 'topic', 'privacy', 'viewed', 'duration')
 
     def is_viewed(self, lecture):
         user = self.context.get('request', None).user
@@ -152,7 +152,7 @@ class FullLectureSerializer(DemoLectureSerializer):
 
     class Meta:
         model = Lecture
-        fields = ('id', 'topic_id', 'title', 'video', 'audio', 'text', 'duration', 'order', 'privacy')
+        fields = ('id', 'topic', 'title', 'description', 'video', 'audio', 'text', 'duration', 'order', 'privacy')
 
     def convert_duration(self, lecture):
         return seconds_to_duration(lecture.duration)
