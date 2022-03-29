@@ -12,7 +12,58 @@ from alteby.utils import seconds_to_duration
 from categories.api.serializers import CategorySerializer, TagSerializer
 from django.db.models import Sum
 from payment.models import CourseEnrollment
+from courses.utils import allowed_to_access_lecture
 
+class LectureIndexSerialiser(serializers.ModelSerializer):
+
+    can_access = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Lecture
+        fields = ('id', 'title', 'can_access')
+
+    def get_can_access(self, lecture):
+        user = self.context.get('user', None)
+        print(lecture.is_enrolled)
+        print(lecture.can_access(user))
+        return lecture.can_access(user) or lecture.is_enrolled
+
+
+class TopicIndexSerialiser(serializers.ModelSerializer):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # We pass the "upper serializer" context to the "nested one"
+        self.fields['lectures'].context.update(self.context)
+
+    lectures = LectureIndexSerialiser(many=True, read_only=True)
+    class Meta:
+        model = Topic
+        fields = ('id', 'title', 'lectures')
+
+class UnitIndexSerialiser(serializers.ModelSerializer):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # We pass the "upper serializer" context to the "nested one"
+        self.fields['topics'].context.update(self.context)
+
+    topics = TopicIndexSerialiser(many=True, read_only=True)
+    class Meta:
+        model = Unit
+        fields = ('id', 'title', 'topics')
+
+class CourseIndexSerialiser(serializers.ModelSerializer):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # We pass the "upper serializer" context to the "nested one"
+        self.fields['units'].context.update(self.context)
+
+    units = UnitIndexSerialiser(many=True, read_only=True)
+    class Meta:
+        model = Course
+        fields = ('id', 'title', 'units')
 
 class FeedbackSerializer(serializers.ModelSerializer):
     class Meta:

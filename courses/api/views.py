@@ -5,7 +5,9 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .serializers import (
-CourseSerializer, CoursesSerializer, UnitSerializer, TopicsListSerializer, TopicDetailSerializer, UnitTopicsSerializer, DemoLectureSerializer,
+CourseSerializer, CoursesSerializer, CourseIndexSerialiser,
+UnitSerializer, TopicsListSerializer,
+TopicDetailSerializer, UnitTopicsSerializer, DemoLectureSerializer,
 FullLectureSerializer, QuizSerializer,
 QuizResultSerializer, AttachementSerializer,
 CommentSerializer, FeedbackSerializer,
@@ -83,6 +85,23 @@ class CourseDetail(APIView):
 
         serializer = CourseSerializer(course, many=False, context={'request': request})
         return Response(serializer.data)
+
+
+class CourseIndex(APIView):
+
+    def get(self, request, course_id, format=None):
+
+        filter_kwargs = {
+        'id': course_id
+        }
+        prefetch_lectures = Prefetch('units__topics__lectures', queryset=Lecture.objects.select_related('privacy').annotate(is_enrolled=Exists(CourseEnrollment.objects.filter(course=course_id, user=request.user))))
+        course, found, error = utils.get_object(model=Course, filter_kwargs=filter_kwargs, prefetch_related=['units__topics',  prefetch_lectures])
+        if not found:
+            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CourseIndexSerialiser(course, many=False, context={'request': request, 'user': request.user})
+        return Response(serializer.data)
+
 
 class LectureDetail(APIView):
 
@@ -615,6 +634,6 @@ class TrackCourseActivity(APIView):
                 'message': 'Checked!',
                 'success_description': 'This Lecture Marked ad read.'
             }
-            return Response(response, status=status.HTTP_403_FORBIDDEN)
+            return Response(response, status=status.HTTP_201_CREATED)
 
         return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)

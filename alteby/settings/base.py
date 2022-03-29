@@ -189,6 +189,9 @@ SITE_INDEX_TITLE = 'Emtyaz Advoisor'
 SITE_TITLE = 'Administration'
 SITE_HEADER = 'Emtyaz Advoisor'
 
+BASE_PROTECTED_ROUTE ='api'
+PROTECTED_ROUTE = 'courses'
+ALLOWED_COURSE_ROUTES = ('index')
 #
 # import django_heroku
 # django_heroku.settings(locals())

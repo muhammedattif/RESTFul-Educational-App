@@ -1,6 +1,7 @@
 from django.urls import path, include
 from .views import (
-CourseList, CourseUnitsList, UnitDetail, TopicList, TopicDetail, LecturesList,
+CourseList, CourseUnitsList, UnitDetail, CourseIndex,
+TopicList, TopicDetail, LecturesList,
 FeaturedCoursesList, CourseDetail,
 TrackCourseActivity,
 LectureDetail, CourseComments,
@@ -17,8 +18,9 @@ urlpatterns = [
   path('', CourseList.as_view(), name='courses'),
 
   # Courses API
-  path('<int:course_id>/', CourseDetail.as_view(), name='course'),
   path('featured/', FeaturedCoursesList.as_view(), name='featured-course'),
+  path('<int:course_id>/', CourseDetail.as_view(), name='course'),
+  path('<int:course_id>/index', CourseIndex.as_view(), name='course-index'),
   path('<int:course_id>/feedbacks/', CourseFeedbacks.as_view(), name='course_feedbacks'),
   path('<int:course_id>/comments', CourseComments.as_view(), name='course_comments'),
   path('<int:course_id>/quiz', QuizDetail.as_view(), name='course_quiz'),
