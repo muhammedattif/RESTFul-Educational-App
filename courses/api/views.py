@@ -132,9 +132,6 @@ class CourseUnitsList(APIView, PageNumberPagination):
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        if not utils.allowed_to_access_course(request.user, course):
-            return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
-
         lectures_duration_queryset = Topic.objects.filter(unit=OuterRef('pk')).annotate(duration_sum=Sum('lectures__duration')).values('duration_sum')[:1]
 
         # Sub query of lectures_queryset
@@ -333,10 +330,6 @@ class QuizDetail(APIView):
             course, found, error = utils.get_course(course_id, select_related=['quiz'], prefetch_related=['quiz__questions__choices'])
             if not found:
                 return Response(error, status=status.HTTP_404_NOT_FOUND)
-
-            if not utils.allowed_to_access_course(request.user, course):
-                error = general_utils.error('access_denied')
-                return Response(error, status=status.HTTP_403_FORBIDDEN)
 
             if not course.quiz:
                 error = general_utils.error('not_found')
