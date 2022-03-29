@@ -94,7 +94,7 @@ class CourseIndex(APIView):
         filter_kwargs = {
         'id': course_id
         }
-        prefetch_lectures = Prefetch('units__topics__lectures', queryset=Lecture.objects.select_related('privacy').annotate(is_enrolled=Exists(CourseEnrollment.objects.filter(course=course_id, user=request.user))))
+        prefetch_lectures = Prefetch('units__topics__lectures', queryset=Lecture.objects.select_related('privacy').prefetch_related('privacy__shared_with').annotate(is_enrolled=Exists(CourseEnrollment.objects.filter(course=course_id, user=request.user))))
         course, found, error = utils.get_object(model=Course, filter_kwargs=filter_kwargs, prefetch_related=['units__topics',  prefetch_lectures])
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)

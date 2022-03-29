@@ -24,8 +24,6 @@ class LectureIndexSerialiser(serializers.ModelSerializer):
 
     def get_can_access(self, lecture):
         user = self.context.get('user', None)
-        print(lecture.is_enrolled)
-        print(lecture.can_access(user))
         return lecture.can_access(user) or lecture.is_enrolled
 
 
