@@ -18,6 +18,7 @@ class CoursePermissionMiddleware(MiddlewareMixin):
     @permission_classes([IsAuthenticated])
     def process_request(self, request):
         assert hasattr(request, 'user'), "None"
+
         self.route = list(filter(None, request.path_info.split('/')))
         self.route_len = len(self.route)
 
@@ -30,6 +31,9 @@ class CoursePermissionMiddleware(MiddlewareMixin):
 
         if self.is_index_requested():
             return None
+
+        if not request.user.is_authenticated:
+            return JsonResponse(general_utils.error('page_access_denied'), status=401)
 
 
         if self.base_route_name == settings.BASE_PROTECTED_ROUTE and self.route_name == settings.PROTECTED_ROUTE and self.course_id.isdigit():

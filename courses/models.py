@@ -214,6 +214,9 @@ class CourseActivity(models.Model):
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='course_activity')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='activity')
     lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name='activity')
+    left_off_at = models.FloatField(default=0, validators=[
+            MinValueValidator(0)
+    ])
 
     class Meta:
         verbose_name_plural = 'Courses Activity Tracker'

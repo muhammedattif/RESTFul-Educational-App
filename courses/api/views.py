@@ -23,7 +23,7 @@ from django.db import IntegrityError
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from django.db import transaction
 from django.db.models.functions import Coalesce
-from django.db.models import Prefetch, Count, Sum, OuterRef, Exists, Subquery, IntegerField, Q, FloatField
+from django.db.models import Prefetch, Count, Sum, OuterRef, Exists, Subquery, IntegerField, Q, FloatField, Value
 from payment.models import CourseEnrollment
 from .swagger_schema import course_detail_swagger_schema
 
@@ -112,9 +112,13 @@ class LectureDetail(APIView):
         'topic__unit__id': unit_id,
         'topic__unit__course__id': course_id
         }
-        lecture, found, error = utils.get_object(model=Lecture, filter_kwargs=filter_kwargs, prefetch_related=['quiz__questions__choices'])
-        if not found:
-            return Response(error, status=status.HTTP_404_NOT_FOUND)
+
+        lecture = Lecture.objects.select_related('privacy').prefetch_related('privacy__shared_with').annotate(
+                viewed=Exists(
+                            CourseActivity.objects.filter(lecture=OuterRef('pk'), user=self.request.user)
+                            ),
+                left_off_at=Coalesce(Subquery(CourseActivity.objects.filter(lecture=OuterRef('pk'), user=self.request.user).values('left_off_at')), 0, output_field=FloatField())
+        ).get(**filter_kwargs)
 
         if utils.allowed_to_access_lecture(request.user, lecture):
             serializer = FullLectureSerializer(lecture, many=False, context={'request': request})
@@ -281,11 +285,10 @@ class LecturesList(APIView, PageNumberPagination):
 
         lectures = topic.lectures.select_related('privacy').prefetch_related('privacy__shared_with').annotate(
                 viewed=Exists(
-                            CourseActivity.objects.filter(lecture=OuterRef('pk'), user=self.request.user
-                            )
-                )
+                            CourseActivity.objects.filter(lecture=OuterRef('pk'), user=self.request.user)
+                            ),
+                left_off_at=Coalesce(Subquery(CourseActivity.objects.filter(lecture=OuterRef('pk'), user=self.request.user).values('left_off_at')), 0, output_field=FloatField())
         ).all()
-
         lectures = self.paginate_queryset(lectures, request, view=self)
         serializer = DemoLectureSerializer(lectures, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
@@ -439,7 +442,7 @@ class CourseQuizResult(APIView):
         if not quiz:
             return Response(general_utils.error('not_found'), status=status.HTTP_404_NOT_FOUND)
 
-        serializer = QuizResultSerializer(course.quiz, many=False, context={'request': request})
+        serializer = QuizResultSerializer(quiz, many=False, context={'request': request})
         return Response(serializer.data)
 
 
@@ -458,8 +461,7 @@ class LectureQuizResult(APIView):
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
         quiz = lecture.quiz
-        quiz_answers = QuizResult.objects.filter(user=request.user, quiz=quiz)
-        serializer = QuizResultSerializer(quiz_answers, many=True, context={'request': request})
+        serializer = QuizResultSerializer(quiz, many=False, context={'request': request})
         return Response(serializer.data)
 
 class CourseAttachement(APIView):
@@ -621,7 +623,16 @@ class TrackCourseActivity(APIView):
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
         if utils.is_enrolled(request.user, lecture.topic.unit.course):
-            CourseActivity.objects.get_or_create(user=request.user, course=lecture.topic.unit.course, lecture=lecture)
+            lecture_activity, created = CourseActivity.objects.get_or_create(user=request.user, course=lecture.topic.unit.course, lecture=lecture)
+
+
+            if 'left_off_at' in request.data:
+                left_off_at = request.data['left_off_at']
+                if not isinstance(left_off_at, (float, int)) or left_off_at < 0:
+                    return Response(general_utils.error('incorrect_left_off'), status=status.HTTP_400_BAD_REQUEST)
+                lecture_activity.left_off_at = left_off_at
+                lecture_activity.save(update_fields=['left_off_at'])
+
             response = {
                 'status': 'success',
                 'message': 'Checked!',

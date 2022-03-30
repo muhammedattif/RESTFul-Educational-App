@@ -100,7 +100,7 @@ class BaseQuizResultSerializer(serializers.ModelSerializer):
 
 class QuizResultSerializer(serializers.ModelSerializer):
     selected_choice = ChoiceSerializer(many=False, read_only=True)
-    result = serializers.SerializerMethodField('get_result')
+    result = serializers.SerializerMethodField()
     questions_count = serializers.SerializerMethodField('get_questions_count')
     score = serializers.SerializerMethodField('get_score')
     class Meta:
@@ -139,20 +139,34 @@ class CourseActivitySerializer(serializers.ModelSerializer):
 
 class DemoLectureSerializer(serializers.ModelSerializer):
     viewed = serializers.BooleanField()
+    left_off_at = serializers.FloatField()
     privacy = LecturePrivacySerializer(many=False, read_only=True)
+    has_video = serializers.SerializerMethodField()
+    has_audio = serializers.SerializerMethodField()
+    has_text = serializers.SerializerMethodField()
+
     class Meta:
         model = Lecture
-        fields = ('id', 'title', 'description', 'order', 'topic', 'privacy', 'viewed', 'duration')
+        fields = ('id', 'title', 'description', 'order', 'topic', 'privacy', 'duration', 'left_off_at', 'viewed', 'has_video', 'has_audio', 'has_text')
 
     def is_viewed(self, lecture):
         user = self.context.get('request', None).user
         return lecture.activity.filter(user=user).exists()
 
+    def get_has_video(self, lecture):
+        return True if lecture.video else False
+
+    def get_has_audio(self, lecture):
+        return True if lecture.audio else False
+
+    def get_has_text(self, lecture):
+        return True if lecture.text else False
+
 class FullLectureSerializer(DemoLectureSerializer):
 
     class Meta:
         model = Lecture
-        fields = ('id', 'topic', 'title', 'description', 'video', 'audio', 'text', 'duration', 'order', 'privacy')
+        fields = ('id', 'topic', 'title', 'description', 'video', 'audio', 'text', 'duration', 'left_off_at', 'viewed', 'order', 'privacy')
 
     def convert_duration(self, lecture):
         return seconds_to_duration(lecture.duration)

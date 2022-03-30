@@ -34,7 +34,8 @@ error_messages = {
     'access_denied': 'You don\'t have access to this resourse!, enroll this course to see its content.',
     'required_fields': 'Some fields are required.',
     'page_access_denied': 'You don\'t have access to preview this page.',
-    'empty_quiz_answers': "Quiz answers cannot be empty."
+    'empty_quiz_answers': "Quiz answers cannot be empty.",
+    'incorrect_left_off': 'Left off at value must be positive and numeric.'
 }
 
 success_messages = {
