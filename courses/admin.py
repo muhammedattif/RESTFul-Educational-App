@@ -121,9 +121,12 @@ class FeedbackConfig(NestedModelAdmin):
     list_filter = ('user', 'course', 'rating' ,'date_created')
     list_display = ('user', 'course', 'rating', 'date_created')
 
+    list_display_links = ['user', 'course']
+
     fieldsets = (
         ("Feedback Information", {'fields': ('user', 'course', 'rating', 'description')}),
     )
+    
 admin.site.register(Feedback, FeedbackConfig)
 admin.site.register(CorrectInfo)
 admin.site.register(Report)

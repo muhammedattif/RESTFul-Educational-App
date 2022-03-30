@@ -1,9 +1,13 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from users.models import User, Student, Teacher
+from django.contrib.auth.forms import (
+    AdminPasswordChangeForm
+)
 
 class UserConfig(UserAdmin):
     model = User
+    change_password_form = AdminPasswordChangeForm
 
     list_filter = ('email', 'username', 'is_active', 'is_staff')
     ordering = ('-date_joined',)
@@ -11,7 +15,7 @@ class UserConfig(UserAdmin):
                     'is_active', 'is_staff')
 
     fieldsets = (
-        ("User Information", {'fields': ('email', 'username')}),
+        ("User Information", {'fields': ('email', 'username', 'password')}),
         ('Permissions', {'fields': ('is_staff', 'is_active', 'is_student', 'is_teacher', 'is_superuser', 'groups', 'user_permissions')}),
     )
 
