@@ -32,11 +32,10 @@ class CoursePermissionMiddleware(MiddlewareMixin):
         if self.is_index_requested():
             return None
 
-        if not request.user.is_authenticated:
-            return JsonResponse(general_utils.error('page_access_denied'), status=401)
-
-
         if self.base_route_name == settings.BASE_PROTECTED_ROUTE and self.route_name == settings.PROTECTED_ROUTE and self.course_id.isdigit():
+
+            if not request.user.is_authenticated:
+                return JsonResponse(general_utils.error('page_access_denied'), status=401)
 
             filter_kwargs = {
             'id': self.course_id
