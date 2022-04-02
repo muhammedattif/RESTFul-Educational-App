@@ -11,7 +11,8 @@ from courses.utils import get_object
 from courses.utils import allowed_to_access_course, get_object
 import alteby.utils as general_utils
 from django.conf import settings
-
+from re import sub
+from rest_framework.authtoken.models import Token
 
 class CoursePermissionMiddleware(MiddlewareMixin):
 
@@ -32,9 +33,16 @@ class CoursePermissionMiddleware(MiddlewareMixin):
         if self.is_index_requested():
             return None
 
+
         if self.base_route_name == settings.BASE_PROTECTED_ROUTE and self.route_name == settings.PROTECTED_ROUTE and self.course_id.isdigit():
 
-            if not request.user.is_authenticated:
+            header_token = request.META.get('HTTP_AUTHORIZATION', None)
+            if header_token is not None:
+              try:
+                token = sub('Token ', '', request.META.get('HTTP_AUTHORIZATION', None))
+                token_obj = Token.objects.get(key = token)
+                request.user = token_obj.user
+              except Token.DoesNotExist:
                 return JsonResponse(general_utils.error('page_access_denied'), status=401)
 
             filter_kwargs = {
