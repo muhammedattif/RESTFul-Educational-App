@@ -212,6 +212,7 @@ class Lecture(models.Model):
 ###### Course Activity Tracking
 class CourseActivity(models.Model):
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='course_activity')
+    is_finished = models.BooleanField(default=False)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='activity')
     lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name='activity')
     left_off_at = models.FloatField(default=0, validators=[

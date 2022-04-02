@@ -35,7 +35,8 @@ error_messages = {
     'required_fields': 'Some fields are required.',
     'page_access_denied': 'You don\'t have access to preview this page.',
     'empty_quiz_answers': "Quiz answers cannot be empty.",
-    'incorrect_left_off': 'Left off at value must be positive and numeric.'
+    'incorrect_left_off': 'Left off at value must be positive and numeric.',
+    'incorrect_is_finished': 'is_finished value must be boolean.'
 }
 
 success_messages = {
