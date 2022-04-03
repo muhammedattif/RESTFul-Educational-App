@@ -10,7 +10,7 @@ media/
 *.bak
 .DS_Store
 # execlude static files
-static
+/static
 # If you are using PyCharm #
 .idea/
 .idea/**/workspace.xml

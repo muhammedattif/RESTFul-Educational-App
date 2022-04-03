@@ -24,6 +24,7 @@ Topic
 admin.site.register(QuizResult)
 admin.site.register(QuizAttempt)
 admin.site.register(Unit)
+
 class UnitTopicsInline(NestedStackedInline):
     model = Topic
     can_delete = True
@@ -89,6 +90,8 @@ class LecturePrivacyInline(NestedStackedInline):
     fk_name = 'lecture'
 
 class LectureConfig(NestedModelAdmin):
+    change_form_template = 'progressbarupload/change_form.html'
+    add_form_template = 'progressbarupload/change_form.html'
     model = Lecture
 
     list_filter = ('topic', )
@@ -126,7 +129,7 @@ class FeedbackConfig(NestedModelAdmin):
     fieldsets = (
         ("Feedback Information", {'fields': ('user', 'course', 'rating', 'description')}),
     )
-    
+
 admin.site.register(Feedback, FeedbackConfig)
 admin.site.register(CorrectInfo)
 admin.site.register(Report)

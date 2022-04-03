@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_rest_passwordreset',
     'drf_yasg',
+    'progressbarupload',
 
     # APPS
     'main',
@@ -194,3 +195,10 @@ ALLOWED_COURSE_ROUTES = ('index')
 #
 # import django_heroku
 # django_heroku.settings(locals())
+
+FILE_UPLOAD_HANDLERS = (
+    "progressbarupload.uploadhandler.ProgressBarUploadHandler",
+    "django.core.files.uploadhandler.MemoryFileUploadHandler",
+    "django.core.files.uploadhandler.TemporaryFileUploadHandler",
+)
+PROGRESSBARUPLOAD_INCLUDE_JQUERY = False
