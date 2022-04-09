@@ -467,7 +467,7 @@ class LectureQuizResult(APIView):
         quiz = lecture.quiz
         if not quiz:
             return Response(general_utils.error('not_found'), status=status.HTTP_404_NOT_FOUND)
-            
+
         serializer = QuizResultSerializer(quiz, many=False, context={'request': request})
         return Response(serializer.data)
 

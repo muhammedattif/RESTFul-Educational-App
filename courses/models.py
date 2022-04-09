@@ -68,6 +68,8 @@ class QuizAttempt(models.Model):
     def __str__(self):
         return f'{self.user}-{self.quiz}'
 
+from .managers import CustomCourseManager
+
 ####### Course Section
 class Course(models.Model):
     title = models.CharField(max_length=100)
@@ -79,6 +81,8 @@ class Course(models.Model):
     featured = models.BooleanField(default=False)
     image = models.ImageField(upload_to="courses/images", blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
+
+    objects = CustomCourseManager()
 
     def __str__(self):
           return self.title
