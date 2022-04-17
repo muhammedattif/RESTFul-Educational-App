@@ -1,0 +1,82 @@
+{% load static %}
+
+<style media="screen">
+.chart-card{
+  box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.2);
+  border-radius: 20px;
+  display: inline-block;
+  margin:10px;
+  padding: 20px 20px 20px 20px;
+  text-align: center;
+  background: #fff;
+  line-height: 19px;
+}
+</style>
+{%block content%}
+
+
+
+<div class="container-fluid mt-5">
+  <h1 class="display-4">Charts</h1>
+  {% for chart in charts %}
+      <div class="row justify-content-md-center">
+        <div class="col-lg-8 chart-card">
+          <!-- displaying the chart -->
+          <div id="container-fluid" style="width:100%;">
+            <canvas id="chart{{chart.id}}"></canvas>
+          </div>
+        </div>
+      </div>
+
+
+        <script>
+
+          var bgColors = []
+          var bordersColors = []
+
+          var o = Math.round, r = Math.random , s = 140;
+          var red, green, blue = 0
+
+            {% with objects=chart.execute %}
+
+              for(let i=0;i<{{objects|length}};i++){
+                red =  o(r()*s+100)
+                green = o(r()*s+50)
+                blue = o(r()*s+10)
+                bgColors.push( 'rgba(' + red + ',' + green + ',' + blue + ',' + (r() * (1 - 0.2) + 0.2).toFixed(1) + ')');
+                console.log(bgColors);
+
+              }
+
+              var ctx = document.getElementById('chart{{chart.id}}').getContext('2d');
+              window.myPie = new Chart(ctx, {
+                type: '{{chart.type}}',
+                data: {
+                  datasets: [{
+                    label: '{{chart.description}}',
+                    data: [{% for item in objects %}'{{item.value}}',{%endfor%}],
+                    backgroundColor: bgColors,
+                    borderColor: bordersColors,
+                  }],
+                  labels: [{%for item in objects %}'{{item.label}}',{%endfor%}]
+                },
+                options: {
+                  title: {
+                    display: true,
+                    text: '{{chart.name}}'
+                  },
+                  responsive: true
+                }
+              });
+
+            {% endwith %}
+
+        </script>
+  {% endfor %}
+
+
+</div>
+
+
+
+{% endblock content%}

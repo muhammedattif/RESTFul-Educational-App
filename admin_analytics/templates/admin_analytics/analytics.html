@@ -1,0 +1,69 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static jazzmin %}
+{% get_jazzmin_ui_tweaks as jazzmin_ui %}
+
+{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
+
+{% block content_title %} {% trans current_model.name %} {% endblock %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item"><a href="{% url 'admin:index' %}"><i class="fa fa-tachometer-alt"></i> {% trans 'Home' %}</a></li>
+        <li class="breadcrumb-item">{% trans 'Dashboard' %}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+
+<style media="screen">
+
+.a-box {
+  box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.2);
+  border-radius: 20px;
+  display: inline-block;
+  width: 240px;
+  margin-bottom:45px;
+  padding: 20px 20px 20px 20px;
+  text-align: center;
+  background: #fff;
+  line-height: 19px;
+  font-size: 14px;
+}
+
+
+.text-container h3 {
+  color: #04bcff;
+  font-size: 18px;
+}
+
+.add-btn{
+  float:right;
+  position:absolute;
+  direction:ltr;
+  right:20px;
+}
+</style>
+<div class="float-right">
+  <a href="{% url 'admin:admin_analytics_aggregatecard_add' %}" class="btn btn-outline-success d-float-right add-btn mb-2""><i class="fa fa-plus-circle"></i> Add Aggregate Card</a>
+
+</div>
+<div class="container mt-5">
+  <div class="row">
+
+    {% for card in cards %}
+      <div class="col-sm-3">
+          <div class="a-box">
+            <h1>{{card.execute}}</h1>
+            <div class="text-container">
+              <h3>{{card.name}}</h3>
+              <div>
+                {{card.description}}
+              </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+</div>
+
+{% include "admin_analytics/charts.html" %}
+{% endblock %}

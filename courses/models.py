@@ -82,6 +82,7 @@ class Course(models.Model):
     image = models.ImageField(upload_to="courses/images", blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
 
+
     objects = CustomCourseManager()
 
     def __str__(self):

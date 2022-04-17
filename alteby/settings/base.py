@@ -42,6 +42,8 @@ INTERNAL_IPS = [
 # Application definition
 
 INSTALLED_APPS = [
+    'admin_analytics',
+
     'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -56,6 +58,7 @@ INSTALLED_APPS = [
     'django_rest_passwordreset',
     'drf_yasg',
     'progressbarupload',
+    'import_export',
 
     # APPS
     'main',
@@ -63,7 +66,8 @@ INSTALLED_APPS = [
     'courses',
     'payment',
     'playlists',
-    'categories'
+    'categories',
+
 ]
 
 ADMIN_REORDER = (
@@ -203,3 +207,6 @@ FILE_UPLOAD_HANDLERS = (
     "django.core.files.uploadhandler.TemporaryFileUploadHandler",
 )
 PROGRESSBARUPLOAD_INCLUDE_JQUERY = False
+
+DATE_INPUT_FORMATS = ['%d.%m.%Y']
+DATETIME_INPUT_FORMATS = ('%d.%m.%Y %H:%M %p', )

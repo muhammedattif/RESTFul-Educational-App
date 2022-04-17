@@ -1,0 +1,31 @@
+.a-box {
+  box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.2);
+  border-radius: 20px;
+  display: inline-block;
+  width: 240px;
+  margin-bottom:45px;
+  padding: 20px 20px 20px 20px;
+  text-align: center;
+  background: #fff;
+  line-height: 19px;
+  font-size: 14px;
+}
+
+
+.text-container h3 {
+  color: #04bcff;
+  font-size: 18px;
+}
+
+.add-btn{
+  float:right;
+  position:absolute;
+  direction:ltr;
+  right:20px;
+}
+
+
+/* Solid border */
+hr.solid {
+  border-top: 3px solid #bbb;
+}
