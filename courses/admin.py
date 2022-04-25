@@ -90,8 +90,6 @@ class LecturePrivacyInline(NestedStackedInline):
     fk_name = 'lecture'
 
 class LectureConfig(NestedModelAdmin):
-    change_form_template = 'progressbarupload/change_form.html'
-    add_form_template = 'progressbarupload/change_form.html'
     model = Lecture
 
     list_filter = ('topic', )

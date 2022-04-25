@@ -37,7 +37,6 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('__debug__/', include(debug_toolbar.urls)),
 
     # Main
     path('main', include('main.urls', 'main')),
@@ -63,20 +62,23 @@ urlpatterns = [
     path('categories/', include('categories.urls', 'categories')),
     # Playlists APIs
     path('api/categories/', include('categories.api.urls', 'categories_api')),
-    path('progressbarupload/', include('progressbarupload.urls')),
-
-
 
     # Payment
     path('payment/', include('payment.urls', 'payment')),
     # Payment APIs
     path('api/payment/', include('payment.api.urls', 'payment_api')),
-
-    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    re_path(r'^$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    re_path(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]
 
+if settings.DEBUG:
+    urlpatterns += [
+    # Debug tool Bar
+    path('__debug__/', include(debug_toolbar.urls)),
+    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+
+    # Swagger
+    re_path(r'^$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    re_path(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    ]
 
 
 admin.site.index_title = settings.SITE_INDEX_TITLE
