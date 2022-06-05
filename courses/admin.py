@@ -20,6 +20,7 @@ QuizAttempt,
 Unit,
 Topic
 )
+from .utils import detect_video_duration
 
 admin.site.register(QuizResult)
 admin.site.register(QuizAttempt)
@@ -92,14 +93,37 @@ class LecturePrivacyInline(NestedStackedInline):
 class LectureConfig(NestedModelAdmin):
     model = Lecture
 
-    list_filter = ('topic', )
+    list_filter = ('topic', 'date_created')
     list_display = ('topic', 'title')
+    readonly_fields = ('duration', )
 
     fieldsets = (
         ("Lecture Information", {'fields': ('title', 'description', 'topic', 'video', 'audio', 'text', 'duration', 'order', 'quiz')}),
     )
 
     inlines = [LecturePrivacyInline, LectureAttachementsInline]
+
+    def save_model(self, request, new_lecture, form, change):
+        # Update lecture duration
+        video_changed = False
+        if not change:
+            super().save_model(request, new_lecture, form, change)
+            new_lecture.duration = detect_video_duration(new_lecture.video.path)
+            return new_lecture.save()
+
+        old_lecture = Lecture.objects.get(pk=new_lecture.pk) if new_lecture.pk else None
+        super().save_model(request, new_lecture, form, change)
+        if not new_lecture.video:
+            new_lecture.duration = 0
+            video_changed = True
+        elif not old_lecture or (old_lecture and old_lecture.video != new_lecture.video):
+            new_lecture.duration = detect_video_duration(new_lecture.video.path)
+            video_changed = True
+
+        if video_changed:
+            CourseActivity.objects.filter(lecture=new_lecture).delete()
+            return new_lecture.save()
+        return new_lecture
 
 admin.site.register(Lecture, LectureConfig)
 admin.site.register(CourseActivity)

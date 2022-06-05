@@ -189,12 +189,19 @@ class Lecture(models.Model):
     duration = models.FloatField(blank=True, default=0)
     order = models.IntegerField()
     quiz = models.OneToOneField(Quiz, on_delete=models.CASCADE, blank=True, null=True)
+    date_created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ('order', )
+        ordering = ('-date_created', )
 
     def __str__(self):
           return self.title
+
+    # def save(self, *args, **kwargs):
+    #     old_lecture = type(self).objects.get(pk=self.pk) if self.pk else None
+    #     super(Lecture, self).save(*args, **kwargs)
+    #     if old_lecture and old.video != self.video: # Field has changed
+    #         do_something(self)
 
     def atomic_post_save(self, sender, created, **kwargs):
         LecturePrivacy.objects.get_or_create(lecture=self)

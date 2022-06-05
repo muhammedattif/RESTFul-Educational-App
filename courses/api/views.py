@@ -629,37 +629,35 @@ class TrackCourseActivity(APIView):
         if not found:
             return Response(error, status=status.HTTP_404_NOT_FOUND)
 
-        if utils.is_enrolled(request.user, lecture.topic.unit.course):
+        if not utils.is_enrolled(request.user, lecture.topic.unit.course):
+            return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
+            
+        lecture_activity, created = CourseActivity.objects.get_or_create(user=request.user, course=lecture.topic.unit.course, lecture=lecture)
 
-            lecture_activity, created = CourseActivity.objects.get_or_create(user=request.user, course=lecture.topic.unit.course, lecture=lecture)
+        update_fields = []
+        if 'left_off_at' in request.data:
+            left_off_at = request.data['left_off_at']
+
+            if not isinstance(left_off_at, (float, int)) or left_off_at < 0:
+                return Response(general_utils.error('incorrect_left_off'), status=status.HTTP_400_BAD_REQUEST)
+
+            lecture_activity.left_off_at = left_off_at
+            update_fields.append('left_off_at')
+
+        if 'is_finished' in request.data:
+            is_finished = request.data['is_finished']
+            if not isinstance(is_finished, bool):
+                return Response(general_utils.error('incorrect_is_finished'), status=status.HTTP_400_BAD_REQUEST)
+
+            lecture_activity.is_finished = is_finished
+            update_fields.append('is_finished')
 
 
-            update_fields = []
-            if 'left_off_at' in request.data:
-                left_off_at = request.data['left_off_at']
+        lecture_activity.save(update_fields=update_fields)
 
-                if not isinstance(left_off_at, (float, int)) or left_off_at < 0:
-                    return Response(general_utils.error('incorrect_left_off'), status=status.HTTP_400_BAD_REQUEST)
-
-                lecture_activity.left_off_at = left_off_at
-                update_fields.append('left_off_at')
-
-            if 'is_finished' in request.data:
-                is_finished = request.data['is_finished']
-                if not isinstance(is_finished, bool):
-                    return Response(general_utils.error('incorrect_is_finished'), status=status.HTTP_400_BAD_REQUEST)
-
-                lecture_activity.is_finished = is_finished
-                update_fields.append('is_finished')
-
-
-            lecture_activity.save(update_fields=update_fields)
-
-            response = {
-                'status': 'success',
-                'message': 'Checked!',
-                'success_description': 'This Lecture Marked ad read.'
-            }
-            return Response(response, status=status.HTTP_201_CREATED)
-
-        return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
+        response = {
+            'status': 'success',
+            'message': 'Checked!',
+            'success_description': 'This Lecture Marked ad read.'
+        }
+        return Response(response, status=status.HTTP_201_CREATED)

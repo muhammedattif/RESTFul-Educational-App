@@ -379,23 +379,24 @@ let password2 = document.getElementById('password2');
 
 const handleAuthentication = event => {
 
-  var minNumberofChars = 6;
+  var minNumberofChars = 8;
   var maxNumberofChars = 16;
-  var regularExpression  = /^[a-zA-Z0-9!@#$%^&*]{6,16}$/;
+  var regularExpression  = /^[a-zA-Z0-9!@#$%^&*]{8,16}$/;
+  var strongRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})");
   var error = false;
   var message = "Unknowen Error."
-console.log(regularExpression.test(password1.value));
+console.log(strongRegex.test(password1.value));
   if(password1.value !== password2.value){
     error = true;
     message = "Password doesn't match."
   }
   else if(password1.value.length < minNumberofChars || password1.value.length > maxNumberofChars){
       error = true;
-      message = "Password must be at least 6 characters.";
+      message = "Password must be at least 8 characters.";
    }
-  else if(!regularExpression.test(password1.value)) {
+  else if(!strongRegex.test(password1.value)) {
     error = true;
-    message = "Password should contain atleast one number and one special character";
+    message = "Password should contain atleast one number, one special character, one lowercase, and one uppercase.";
  }
 
   if(error){

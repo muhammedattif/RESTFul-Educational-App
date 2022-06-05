@@ -19,16 +19,15 @@ def add_quiz_attempt(sender, instance=None, created=False, **kwargs):
         if instance.question == instance.quiz.questions.last():
             QuizAttempt.objects.create(user=instance.user, quiz=instance.quiz)
 
-@receiver(post_save, sender=Lecture)
-def calculate_duration(sender, instance=None, created=False, **kwargs):
-    if created:
-        if instance.video:
-            video = VideoFileClip(instance.video.path)
-            instance.duration = video.duration # this will return the length of the video in seconds
-            print(instance.duration)
-        elif instance.audio:
-            audio = AudioFileClip(instance.audio.path)
-            instance.duration = audio.duration  # this will return the length of the video in seconds
-        else:
-            instance.duration = 0
-        instance.save()
+# @receiver(post_save, sender=Lecture)
+# def calculate_duration(sender, instance=None, created=False, **kwargs):
+#     if created:
+#         if instance.video:
+#             video = VideoFileClip(instance.video.path)
+#             instance.duration = video.duration # this will return the length of the video in seconds
+#             instance.save()
+#     else:
+#         if instance.video:
+#             video = VideoFileClip(instance.video.path)
+#             instance.duration = video.duration # this will return the length of the video in seconds
+#             instance.save()

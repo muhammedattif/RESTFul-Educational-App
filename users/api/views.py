@@ -138,7 +138,7 @@ class ResetPasswordConfirmView(ResetPasswordConfirm):
     def get(self, request):
         token = request.GET.get('token', None)
         data = {'token': token}
-
+        
         try:
             if not token:
                 raise Exception("Invalid Link.")
@@ -179,10 +179,10 @@ class ResetPasswordConfirmView(ResetPasswordConfirm):
                 )
             except ValidationError as e:
                 # raise a validation error for the serializer
-                return render(request, 'users/reset_password_error.html')
-                # raise exceptions.ValidationError({
-                #     'password': e.messages
-                # })
+                return render(request, 'users/reset_password_confirm.html', context={
+                 'error_messages': e.messages
+                })
+
 
             reset_password_token.user.set_password(password)
             reset_password_token.user.save()

@@ -1,5 +1,6 @@
 from .models import Lecture, Course, Unit, Topic
 import alteby.utils as general_utils
+from moviepy.editor import VideoFileClip, AudioFileClip
 
 def get_course(course_id, prefetch_related=None, select_related=None):
     try:
@@ -63,3 +64,6 @@ def allowed_to_access_course(user, course):
 
 def is_enrolled(user, course):
     return user.is_student and user.student_info.is_enrolled(course)
+
+def detect_video_duration(video_path):
+    return VideoFileClip(video_path).duration
