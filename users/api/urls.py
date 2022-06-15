@@ -1,6 +1,13 @@
 from django.urls import path, include
 from payment.api.views import CoursesEnrollments
-from .views import SignIn, SignUp, ProfileDetail, EnrolledCourses, ChangePasswordView, ResetPasswordConfirmView
+from .views import (
+SignIn, SignUp,
+ProfileDetail, EnrolledCourses,
+ChangePasswordView,
+ResetPasswordConfirmView,
+AnonymousToken
+)
+
 app_name = 'users'
 
 urlpatterns = [
@@ -8,6 +15,7 @@ urlpatterns = [
     path('<int:user_id>/enrollments', CoursesEnrollments.as_view(), name="courses_enrollments"),
     path('profile/', ProfileDetail.as_view(), name="profile"),
     path('<int:user_id>/enrolled-courses/', EnrolledCourses.as_view(), name="enrolled-courses"),
+    path('anonymous-token', AnonymousToken.as_view(), name="anonymous-token"),
 
     # Authentication Routes
     path('signin', SignIn.as_view(), name="signin"),

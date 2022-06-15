@@ -138,7 +138,7 @@ class ResetPasswordConfirmView(ResetPasswordConfirm):
     def get(self, request):
         token = request.GET.get('token', None)
         data = {'token': token}
-        
+
         try:
             if not token:
                 raise Exception("Invalid Link.")
@@ -221,3 +221,16 @@ class EnrolledCourses(APIView, PageNumberPagination):
 
         serializer = CourseSerializer(courses, many=True, context={'request':request})
         return self.get_paginated_response(serializer.data)
+
+class AnonymousToken(APIView):
+
+    authentication_classes = ()
+    permission_classes = ()
+
+    def get(self, request):
+        anonymous_user = User.get_or_create_anonymous_user()
+        token, created = Token.objects.get_or_create(user=anonymous_user)
+        response = {
+            'token': token.key,
+        }
+        return Response(response, status=status.HTTP_200_OK)

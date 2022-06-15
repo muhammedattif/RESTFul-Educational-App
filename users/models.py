@@ -62,6 +62,21 @@ class User(AbstractBaseUser, PermissionsMixin):
     def save(self, created=None, *args, **kwargs):
         super().save(*args, **kwargs)
 
+    @classmethod
+    def get_or_create_anonymous_user(cls):
+
+        email = "anonymous@anonymous.cc"
+        first_name = "anonymous"
+        last_name = "anonymous"
+        username = "anonymous"
+
+        anonymous_user, created = cls.objects.get_or_create(
+        email=email,
+        first_name=first_name,
+        last_name=last_name,
+        username=username
+        )
+        return anonymous_user
 
 class Student(models.Model):
 
