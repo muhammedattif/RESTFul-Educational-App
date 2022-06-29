@@ -293,52 +293,6 @@ class CourseSerializer(serializers.ModelSerializer, QuerySerializerMixin):
     def format_lectures_duration(self, course):
         return seconds_to_duration(course.course_duration)
 
-class CoursesSerializerTest(serializers.ModelSerializer, QuerySerializerMixin):
-    progress = serializers.SerializerMethodField('get_progress')
-    is_enrolled = serializers.SerializerMethodField('get_enrollment')
-    units_count = serializers.IntegerField(source='get_units_count')
-    lectures_count = serializers.IntegerField(source='get_lectures_count')
-    course_duration = serializers.CharField(source='get_lectures_duration')
-
-    # Flag: this field hits the DB
-    finished = serializers.BooleanField(source='is_finished')
-
-    privacy = CoursePrivacySerializer(many=False, read_only=True)
-    categories = CategorySerializer(many=True, read_only=True)
-    tags = TagSerializer(many=True, read_only=True)
-
-    PREFETCH_FIELDS = ['categories__course_set', 'privacy__shared_with']
-
-
-    class Meta:
-        model = Course
-        fields = (
-        'id', 'image', 'title',
-        'description', 'date_created',
-        'categories', 'tags', 'price',
-        'privacy', 'quiz',
-        'units_count', 'lectures_count', 'course_duration', 'progress', 'is_enrolled', 'finished')
-
-    def get_progress(self, course):
-        user = self.context.get('request', None).user
-        content_viewed_count = course.activity.filter(user=user).count()
-
-        content_count = course.get_lectures_count()
-        if not content_count:
-            return 0.0
-        return content_viewed_count/content_count*100
-
-    def get_enrollment(self, course):
-        user = self.context.get('request', None).user
-        return CourseEnrollment.objects.filter(user=user, course=course).exists()
-
-    def get_activity_status(self, course):
-        if not course.lectures_count:
-            return False
-        return course.lectures_count == course.lectures_viewed_count
-
-    def format_lectures_duration(self, course):
-        return seconds_to_duration(course.course_duration)
 
 class CoursesSerializer(serializers.ModelSerializer, QuerySerializerMixin):
     progress = serializers.SerializerMethodField('get_progress')

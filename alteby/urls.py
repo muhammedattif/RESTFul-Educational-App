@@ -69,7 +69,7 @@ urlpatterns = [
     path('api/payment/', include('payment.api.urls', 'payment_api')),
 ]
 
-if not settings.DEBUG:
+if settings.DEBUG:
     urlpatterns += [
     # Debug tool Bar
     path('__debug__/', include(debug_toolbar.urls)),
