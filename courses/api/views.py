@@ -5,7 +5,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .serializers import (
-CourseSerializer, CoursesSerializer, CourseIndexSerialiser,
+CourseSerializer, CoursesSerializerTest, CoursesSerializer, CourseIndexSerialiser,
 UnitSerializer, TopicsListSerializer,
 TopicDetailSerializer, UnitTopicsSerializer, DemoLectureSerializer,
 FullLectureSerializer, QuizSerializer,
@@ -40,6 +40,22 @@ class CourseList(ListAPIView):
             is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=self.request.user)),
             lectures_viewed_count=Count('activity', filter=Q(activity__user=self.request.user, activity__is_finished=True), distinct=True)
         ).all()
+
+        if 'q' in request_params:
+            search_query = request_params.get('q').split(" ")
+            query = reduce(operator.or_, (Q(title__icontains=search_term) | Q(description__icontains=search_term) for search_term in search_query))
+            serializer = self.get_serializer()
+            return serializer.get_related_queries(queryset.filter(query))
+        else:
+            serializer = self.get_serializer()
+            return serializer.get_related_queries(queryset)
+
+class CourseListTest(ListAPIView):
+    serializer_class = CoursesSerializerTest
+
+    def get_queryset(self):
+        request_params = self.request.GET
+        queryset = Course.objects.prefetch_related('tags', 'privacy__shared_with').select_related('privacy').all()
 
         if 'q' in request_params:
             search_query = request_params.get('q').split(" ")
@@ -631,7 +647,7 @@ class TrackCourseActivity(APIView):
 
         if not utils.is_enrolled(request.user, lecture.topic.unit.course):
             return Response(general_utils.error('access_denied'), status=status.HTTP_403_FORBIDDEN)
-            
+
         lecture_activity, created = CourseActivity.objects.get_or_create(user=request.user, course=lecture.topic.unit.course, lecture=lecture)
 
         update_fields = []

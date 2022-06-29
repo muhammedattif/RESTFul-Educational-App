@@ -8,7 +8,7 @@ LectureDetail, CourseComments,
 CourseFeedbacks, LectureComments,
 QuizDetail, CourseQuizAnswer, LectureQuizAnswer,
 CourseQuizResult, LectureQuizResult,
-CourseAttachement, LectureAttachement
+CourseAttachement, LectureAttachement, CourseListTest
 )
 
 app_name = 'courses'
@@ -16,6 +16,7 @@ app_name = 'courses'
 urlpatterns = [
   # courses APIs routes
   path('', CourseList.as_view(), name='courses'),
+  path('test/', CourseListTest.as_view(), name='courses_test'),
 
   # Courses API
   path('featured/', FeaturedCoursesList.as_view(), name='featured-course'),
