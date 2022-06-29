@@ -208,14 +208,7 @@ class EnrolledCourses(APIView, PageNumberPagination):
 
         courses_ids = request.user.enrollments.values_list('course', flat=True)
 
-        course_duration_queryset = Unit.objects.filter(course=OuterRef('pk')).annotate(duration_sum=Sum('topics__lectures__duration')).values('duration_sum')[:1]
-        courses = Course.objects.prefetch_related('tags', 'privacy__shared_with').select_related('privacy').annotate(
-            units_count=Count('units', distinct=True),
-            lectures_count=Count('units__topics__lectures', distinct=True),
-            course_duration=Coalesce(Subquery(course_duration_queryset), 0, output_field=FloatField()),
-            is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=self.request.user)),
-            lectures_viewed_count=Count('activity', filter=Q(activity__user=self.request.user), distinct=True)
-        ).filter(id__in=courses_ids)
+        courses = Course.objects.prefetch_related('tags', 'privacy__shared_with').select_related('privacy').filter(id__in=courses_ids)
 
         courses = self.paginate_queryset(courses, request, view=self)
 
