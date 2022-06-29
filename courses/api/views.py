@@ -32,14 +32,7 @@ class CourseList(ListAPIView):
 
     def get_queryset(self):
         request_params = self.request.GET
-        course_duration_queryset = Unit.objects.filter(course=OuterRef('pk')).annotate(duration_sum=Sum('topics__lectures__duration')).values('duration_sum')[:1]
-        queryset = Course.objects.prefetch_related('tags', 'privacy__shared_with').select_related('privacy').annotate(
-            units_count=Count('units', distinct=True),
-            lectures_count=Count('units__topics__lectures', distinct=True),
-            course_duration=Coalesce(Subquery(course_duration_queryset), 0, output_field=FloatField()),
-            is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=self.request.user)),
-            lectures_viewed_count=Count('activity', filter=Q(activity__user=self.request.user, activity__is_finished=True), distinct=True)
-        ).all()
+        queryset = Course.objects.prefetch_related('tags', 'privacy__shared_with').select_related('privacy').all()
 
         if 'q' in request_params:
             search_query = request_params.get('q').split(" ")
@@ -51,17 +44,11 @@ class CourseList(ListAPIView):
             return serializer.get_related_queries(queryset)
 
 class FeaturedCoursesList(ListAPIView):
-    serializer_class = CourseSerializer
+    serializer_class = CoursesSerializer
 
     def get_queryset(self):
-        course_duration_queryset = Unit.objects.filter(course=OuterRef('pk')).annotate(duration_sum=Sum('topics__lectures__duration')).values('duration_sum')[:1]
-        queryset = Course.objects.prefetch_related('tags', 'privacy__shared_with').select_related('privacy').annotate(
-            units_count=Count('units', distinct=True),
-            lectures_count=Count('units__topics__lectures', distinct=True),
-            course_duration=Coalesce(Subquery(course_duration_queryset), 0, output_field=FloatField()),
-            is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=self.request.user)),
-            lectures_viewed_count=Count('activity', filter=Q(activity__user=self.request.user, activity__is_finished=True), distinct=True)
-        ).filter(featured=True)
+        queryset = Course.objects.prefetch_related(
+        'tags', 'privacy__shared_with').select_related('privacy').filter(featured=True)
 
         serializer = self.get_serializer()
         return serializer.get_related_queries(queryset)
@@ -72,15 +59,9 @@ class CourseDetail(APIView):
     @course_detail_swagger_schema
     def get(self, request, course_id, format=None):
 
-        course_duration_queryset = Unit.objects.filter(course=OuterRef('pk')).annotate(duration_sum=Sum('topics__lectures__duration')).values('duration_sum')[:1]
-        course = Course.objects.prefetch_related('privacy__shared_with', 'categories__course_set').select_related('privacy').filter(
+        course = Course.objects.prefetch_related(
+        'privacy__shared_with', 'categories__course_set').select_related('privacy').filter(
             id=course_id
-        ).annotate(
-            units_count=Count('units', distinct=True),
-            lectures_count=Count('units__topics__lectures', distinct=True),
-            course_duration=Coalesce(Subquery(course_duration_queryset), 0, output_field=FloatField()),
-            is_enrolled=Exists(CourseEnrollment.objects.filter(course=OuterRef('pk'), user=request.user)),
-            lectures_viewed_count=Count('activity', filter=Q(activity__user=request.user, activity__is_finished=True), distinct=True)
         ).get(id=course_id)
 
         serializer = CourseSerializer(course, many=False, context={'request': request})

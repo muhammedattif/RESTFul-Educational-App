@@ -114,6 +114,8 @@ class Course(models.Model):
 
     def is_finished(self, user):
         lectures = Lecture.objects.filter(topic__unit__course=self)
+        if not lectures:
+            return False
         activity = self.activity.filter(user=user, lecture__in=lectures).count()
         return len(lectures) == activity
 
