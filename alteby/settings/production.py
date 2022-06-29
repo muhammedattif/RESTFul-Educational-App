@@ -65,3 +65,25 @@ USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = int(env('FILE_UPLOAD_MAX_MEMORY_SIZE'))  #In bytes
+
+INSTALLED_APPS +=[
+    # this for debugging SQL
+    'debug_toolbar',
+]
+
+MIDDLEWARE += [
+    # For debugging
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+]
+
+# This for degugging
+INTERNAL_IPS = [
+    '',
+]
+
+def custom_show_toolbar(request):
+    return True # Always show toolbar, for example purposes only.
+
+DEBUG_TOOLBAR_CONFIG = {
+    'SHOW_TOOLBAR_CALLBACK': custom_show_toolbar,
+}
